@@ -26,7 +26,7 @@ def get_user(user_id):
 def start(message):
     user = get_user(message.chat.id)
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🛒 Ver Catálogo", callback_data="catalogo"))
+    markup.add(types.InlineKeyboardButton("🛒 Cc full ", callback_data="catalogo"))
     markup.add(types.InlineKeyboardButton("💰 Adicionar Saldo", callback_data="add_saldo"))
     markup.add(types.InlineKeyboardButton("⭐ Área VIP", callback_data="area_vip"))
     bot.send_message(message.chat.id, f"Bem-vindo à Magic Store!\nSeu saldo: R$ {user['saldo']:.2f}", reply_markup=markup)
