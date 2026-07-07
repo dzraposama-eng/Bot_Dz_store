@@ -29,7 +29,7 @@ def start(message):
     markup.add(types.InlineKeyboardButton("🛒 Cc full ", callback_data="catalogo"))
     markup.add(types.InlineKeyboardButton("💰 Adicionar Saldo", callback_data="add_saldo"))
     markup.add(types.InlineKeyboardButton("⭐ Área VIP", callback_data="area_vip"))
-    bot.send_message(message.chat.id, f"Bem-vindo à Magic Store!\nSeu saldo: R$ {user['saldo']:.2f}", reply_markup=markup)
+    bot.send_message(message.chat.id, f"Bem-vindo à Riley Store!\nSeu saldo: R$ {user['saldo']:.2f}", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
