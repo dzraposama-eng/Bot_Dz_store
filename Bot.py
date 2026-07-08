@@ -65,7 +65,15 @@ def callback(call):
         idx = int(call.data.split("_")[1])
         item = catalogo_itens[idx]
         markup = types.InlineKeyboardMarkup()
-        
+    
+# Banco de dados
+users = {}
+catalogo_itens = [
+    {"id": 0, "nome": "Script Básico", "preco": 5.0},
+    {"id": 1, "nome": "Script Intermediário", "preco": 10.0},
+    {"id": 2, "nome": "Script Avançado", "preco": 20.0},
+    {"id": 3, "nome": "Script Básico", "preco": 5.0},
+]    
         row = []
         if idx > 0: row.append(types.InlineKeyboardButton("⬅️ Anterior", callback_data=f"cat_{idx-1}"))
         if idx < len(catalogo_itens) - 1: row.append(types.InlineKeyboardButton("Próximo ➡️", callback_data=f"cat_{idx+1}"))
