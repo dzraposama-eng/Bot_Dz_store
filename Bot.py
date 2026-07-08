@@ -34,18 +34,41 @@ def start(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
     user = get_user(call.message.chat.id)
-       
-    if call.data == "catalogo":
+    
+    # 1. MENU PRINCIPAL (O destino do botão voltar)
+    if call.data == "menu_principal":
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("🛒 Cc full", callback_data="catalogo"))
+        markup.add(types.InlineKeyboardButton("💰 Adicionar Saldo", callback_data="add_saldo"))
+        markup.add(types.InlineKeyboardButton("⭐ Área VIP", callback_data="area_vip"))
+        bot.edit_message_text(f"Bem-vindo à Riley Store!\nSeu saldo: R$ {user['saldo']:.2f}", 
+                              call.message.chat.id, call.message.message_id, reply_markup=markup)
+
+    # 2. CATÁLOGO (Onde o botão voltar é criado)
+    elif call.data == "catalogo":
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("Script Básico - R$ 5", callback_data="buy_basico"))
-        # Produto VIP protegido
         texto = "⭐ [VIP ONLY] Script Secreto - R$ 0,00" if user['vip'] else "🔒 [VIP ONLY] Script Secreto (Bloqueado)"
         markup.add(types.InlineKeyboardButton(texto, callback_data="buy_vip"))
-        
-        # Adicione o botão voltar aqui:
-        markup.add(types.InlineKeyboardButton("⬅️ Voltar", callback_data="start"))
-        
+        # Este botão chama o "menu_principal" criado acima
+        markup.add(types.InlineKeyboardButton("⬅️ Voltar", callback_data="menu_principal"))
         bot.edit_message_text("Nosso Catálogo:", call.message.chat.id, call.message.message_id, reply_markup=markup)
+
+    # 3. OUTRAS FUNÇÕES
+    elif call.data == "add_saldo":
+        bot.send_message(call.message.chat.id, "Simulação: O PIX foi gerado! Clique abaixo para confirmar.", 
+                         reply_markup=types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("✅ Já paguei!", callback_data="verificar_pagamento")))
+
+    elif call.data == "verificar_pagamento":
+        user['saldo'] += 20.0
+        bot.answer_callback_query(call.id, "Pagamento aprovado! R$ 20,00 adicionados.")
+        # Após adicionar saldo, você pode querer voltar ao menu:
+        # (Opcional: descomente a linha abaixo para voltar ao início automaticamente)
+        # callback(call) # Isso chamaria a lógica novamente
+
+    elif call.data == "area_vip":
+        # ... resto do seu código de VIP ...
+
 
 
 
