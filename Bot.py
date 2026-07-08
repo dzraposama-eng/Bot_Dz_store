@@ -39,9 +39,20 @@ def menu_principal(call):
 # --- COMANDOS ---
 @bot.message_handler(commands=['start'])
 def start(message):
+    # Link da foto que você quer enviar (pode ser uma URL direta ou caminho de arquivo)
+    foto_url = "https://exemplo.com/sua_imagem.jpg" 
+    
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("Abrir Menu", callback_data="menu_start"))
-    bot.send_message(message.chat.id, "Bem-vindo à Magic Store! Clique abaixo para começar:", reply_markup=markup)
+    
+    # Envia a foto com a legenda e os botões
+    bot.send_photo(
+        message.chat.id, 
+        photo=foto_url, 
+        caption="Bem-vindo à Magic Store! A loja mais completa do Telegram.", 
+        reply_markup=markup
+    )
+
 
 # --- CALLBACKS ---
 @bot.callback_query_handler(func=lambda call: True)
