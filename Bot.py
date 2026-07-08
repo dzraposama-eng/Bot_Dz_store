@@ -18,6 +18,9 @@ catalogo_itens = [
     {"id": 0, "nome": "Script Básico", "preco": 5.0},
     {"id": 1, "nome": "Script Intermediário", "preco": 10.0},
     {"id": 2, "nome": "Script Avançado", "preco": 20.0}
+    {"id": 3, "nome": "Script Básico", "preco": 5.0},
+    {"id": 4, "nome": "Script Intermediário", "preco": 10.0},
+    {"id": 4, "nome": "Script Avançado", "preco": 20.0}
 ]
 
 def get_user(user_id):
