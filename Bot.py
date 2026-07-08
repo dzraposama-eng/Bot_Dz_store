@@ -29,18 +29,6 @@ def get_user(user_id):
         users[user_id] = {'saldo': 0.0, 'compras': []}
     return users[user_id]
 
-# --- FUNÇÕES AUXILIARES ---
-def menu_principal(call):
-    user = get_user(call.message.chat.id)
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🛒 Ver Catálogo", callback_data="cat_0"))
-    markup.add(types.InlineKeyboardButton("💰 Adicionar Saldo", callback_data="add_saldo"))
-    markup.add(types.InlineKeyboardButton("👤 Meu Perfil", callback_data="perfil"))
-    bot.edit_message_text(f"📱 **Magic Store**\nSeu saldo: R$ {user['saldo']:.2f}", 
-                          call.message.chat.id, call.message.message_id, 
-                          reply_markup=markup, parse_mode="Markdown")
-
-# --- COMANDOS ---
 @bot.message_handler(commands=['start'])
 def start(message):
     foto_url = "https://img.freepik.com/vetores-gratis/fundo-de-tecnologia-digital-futurista_23-2148911068.jpg" 
@@ -64,7 +52,19 @@ def start(message):
         reply_markup=markup,
         parse_mode="Markdown"
     )
-to=foto_url, caption="Bem-vindo à Magic Store!", reply_markup=markup)
+
+# --- FUNÇÕES AUXILIARES ---
+def menu_principal(call):
+    user = get_user(call.message.chat.id)
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("🛒 Ver Catálogo", callback_data="cat_0"))
+    markup.add(types.InlineKeyboardButton("💰 Adicionar Saldo", callback_data="add_saldo"))
+    markup.add(types.InlineKeyboardButton("👤 Meu Perfil", callback_data="perfil"))
+    bot.edit_message_text(f"📱 **Magic Store**\nSeu saldo: R$ {user['saldo']:.2f}", 
+                          call.message.chat.id, call.message.message_id, 
+                          reply_markup=markup, parse_mode="Markdown")
+
+
 
 @bot.message_handler(commands=['bin'])
 def mostrar_bin(message):
