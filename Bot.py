@@ -6,7 +6,7 @@ from threading import Thread
 from flask import Flask
 
 # --- CONFIGURAÇÕES ---
-BOT_TOKEN = '8829119917:AAGQHWCcMejBnezPR00HbSwb1g-C-NSRQDQ'
+BOT_TOKEN = '8829119917:AAHfz0KUtKzItK2IanUixZOGRMfJiZJuxrc'
 MP_TOKEN = 'SEU_TOKEN_MERCADO_PAGO_AQUI'
 
 bot = telebot.TeleBot(BOT_TOKEN)
