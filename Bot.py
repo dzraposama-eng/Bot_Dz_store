@@ -31,20 +31,21 @@ def get_user(user_id):
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    # Foto que será enviada no início
     foto_url = "https://img.freepik.com/vetores-gratis/fundo-de-tecnologia-digital-futurista_23-2148911068.jpg" 
     
-    # Prepara o catálogo diretamente
-    # Chamamos o primeiro item (id 0) para exibir logo de cara
+    # Define o primeiro item do catálogo para exibição inicial[span_1](start_span)[span_1](end_span)
     item = catalogo_itens[0]
     markup = types.InlineKeyboardMarkup()
     
-    # Botão de navegação (já que não tem anterior, só o próximo)
+    # Adiciona botão de navegação para o próximo item, se existir[span_2](start_span)[span_2](end_span)
     if len(catalogo_itens) > 1:
         markup.add(types.InlineKeyboardButton("Próximo ➡️", callback_data="cat_1"))
     
-    markup.add(types.InlineKeyboardButton(f"💳 Comprar (R$ {item['preco']})", callback_data=f"buy_0"))
+    # Adiciona botão de compra para o item atual[span_3](start_span)[span_3](end_span)
+    markup.add(types.InlineKeyboardButton(f"💳 Comprar (R$ {item['preco']:.2f})", callback_data=f"buy_0"))
     
-    # Envia a foto com o primeiro item do catálogo como legenda
+    # Envia a foto com os detalhes do produto na legenda[span_4](start_span)[span_4](end_span)
     bot.send_photo(
         message.chat.id, 
         photo=foto_url, 
