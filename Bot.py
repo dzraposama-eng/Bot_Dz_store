@@ -22,14 +22,17 @@ def get_user(user_id):
     return users[user_id]
 
 # --- FUNÇÕES DE MENU ---
-@bot.message_handler(commands=['start'])
-def start(message):
-    user = get_user(message.chat.id)
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🛒 CC FULL", callback_data="catalogo"))
-    markup.add(types.InlineKeyboardButton("💰 Adicionar Saldo", callback_data="add_saldo"))
-    markup.add(types.InlineKeyboardButton("⭐ Área VIP", callback_data="area_vip"))
-    bot.send_message(message.chat.id, f"Bem-vindo à RILEY STORE !\nSeu saldo: R$ {user['saldo']:.2f}", reply_markup=markup)
+    # Lógica para o botão Voltar
+    if call.data == "start":
+        user = get_user(call.message.chat.id)
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("🛒 Ver Catálogo", callback_data="catalogo"))
+        markup.add(types.InlineKeyboardButton("💰 Adicionar Saldo", callback_data="add_saldo"))
+        markup.add(types.InlineKeyboardButton("⭐ Área VIP", callback_data="area_vip"))
+        bot.edit_message_text(f"Bem-vindo à Magic Store!\nSeu saldo: R$ {user['saldo']:.2f}", 
+                              call.message.chat.id, call.message.message_id, reply_markup=markup)
+        return # Para a execução aqui e não entra nos outros ifs
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
