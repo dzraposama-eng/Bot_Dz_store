@@ -52,6 +52,16 @@ def start(message):
         caption="Bem-vindo à Magic Store! A loja mais completa do Telegram.", 
         reply_markup=markup
     )
+@bot.message_handler(commands=['bin'])
+def mostrar_bin(message):
+    user = get_user(message.chat.id)
+    
+    if not user['compras']:
+        bot.send_message(message.chat.id, "Sua bin está vazia! Você ainda não comprou nada.")
+    else:
+        # Formata a lista de compras
+        lista_compras = "\n".join([f"✅ {item}" for item in user['compras']])
+        bot.send_message(message.chat.id, f"📦 **Seus itens comprados:**\n\n{lista_compras}")
 
 
 # --- CALLBACKS ---
