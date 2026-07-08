@@ -90,13 +90,21 @@ def callback(call):
     elif call.data == "perfil":
         bot.edit_message_text(f"Saldo: R$ {user['saldo']:.2f}", call.message.chat.id, call.message.message_id, reply_markup=types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("🔙 Voltar", callback_data="menu_start")))
 
-# --- INICIALIZAÇÃO ---
+# --- INICIALIZAÇÃO CORRIGIDA ---
 if __name__ == "__main__":
+    # Inicia o Flask em background APENAS para satisfazer o Render
     def run_flask():
         app = Flask(__name__)
         @app.route('/')
         def home(): return "Bot online"
-        app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
+        # Garante que o Flask use a porta fornecida pelo Render
+        port = int(os.environ.get("PORT", 8080))
+        app.run(host='0.0.0.0', port=port)
     
-    Thread(target=run_flask).start()
-    bot.infinity_polling(skip_pending=True)
+    server = Thread(target=run_flask)
+    server.daemon = True
+    server.start()
+    
+    # O infinity_polling é mais estável que o bot.polling
+    print("Iniciando o bot...")
+    bot.infinity_polling(none_stop=True, skip_pending=True)
