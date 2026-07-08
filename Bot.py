@@ -4,70 +4,58 @@ import os
 from threading import Thread
 from flask import Flask
 
-BOT_TOKEN = os.environ.get('TOKEN', '8829119917:AAGQHWCcMejBnezPR00HbSwb1g-C-NSRQDQ')
+BOT_TOKEN = os.environ.get('TOKEN', 'SEU_TOKEN_AQUI')
 bot = telebot.TeleBot(BOT_TOKEN)
 
+# Banco de dados simples
 users = {}
 
-def get_user(user_id):
-    if user_id not in users:
-        users[user_id] = {'saldo': 0.0, 'vip': False}
-    return users[user_id]
+def get_menu_fixo():
+    # Cria o menu fixo inferior (como na sua imagem)
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(types.KeyboardButton("🛒 Menu"), types.KeyboardButton("💎 Seu Perfil"))
+    markup.add(types.KeyboardButton("💰 Adiciona Saldo"))
+    markup.add(types.KeyboardButton("👤 Afiliados"), types.KeyboardButton("👑 SEJA CLIENTE VIP"))
+    return markup
 
-# --- MENU INICIAL COM FOTO ---
 @bot.message_handler(commands=['start'])
 def start(message):
-    user = get_user(message.chat.id)
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🛒 Cc full", callback_data="catalogo"))
-    markup.add(types.InlineKeyboardButton("💰 Adicionar Saldo", callback_data="add_saldo"))
-    markup.add(types.InlineKeyboardButton("⭐ Área VIP", callback_data="area_vip"))
+    texto_boas_vindas = """
+⚡ Recargas automáticas via PIX
+
+🚨 TERMOS IMPORTANTES:
+⚠️ Sem reembolso de saldo
+⚠️ Sistema antifraude ativo
+⚠️ Uso indevido = BAN + perda de saldo
+⚠️ Garantimos apenas LIVE
+⚠️ Trocas somente via bot em até 5 minutos
+
+👑 Seja profissional.
+🚀 Seja Riley Store.
+    """
+    bot.send_message(message.chat.id, texto_boas_vindas, reply_markup=get_menu_fixo())
+
+@bot.message_handler(func=lambda message: True)
+def responder_mensagens(message):
+    user_id = message.chat.id
+    if user_id not in users: users[user_id] = {'saldo': 0.0, 'vip': False}
+
+    if message.text == "🛒 Menu":
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("Cc Full", callback_data="cc_full"))
+        bot.send_message(message.chat.id, "Escolha um produto:", reply_markup=markup)
     
-    try:
-        # Envia a foto que está na mesma pasta no GitHub
-        foto = open('foto_perfil.png', 'rb')
-        bot.send_photo(message.chat.id, foto, caption=f"Bem-vindo à Riley Store!\nSeu saldo: R$ {user['saldo']:.2f}", reply_markup=markup)
-        foto.close()
-    except Exception as e:
-        bot.send_message(message.chat.id, f"Bem-vindo! (Erro ao carregar foto: {e})", reply_markup=markup)
+    elif message.text == "💎 Seu Perfil":
+        bot.send_message(message.chat.id, f"Seu Saldo: R$ {users[user_id]['saldo']:.2f}\nVIP: {'Sim' if users[user_id]['vip'] else 'Não'}")
 
-# --- GERENCIADOR DE BOTÕES ---
-@bot.callback_query_handler(func=lambda call: True)
-def callback(call):
-    user = get_user(call.message.chat.id)
-    bot.answer_callback_query(call.id)
+    elif message.text == "💰 Adiciona Saldo":
+        bot.send_message(message.chat.id, "Envie o comprovante PIX para o suporte.")
 
-    # 1. MENU PRINCIPAL (Destino do Voltar)
-    if call.data == "menu_principal":
-        markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("🛒 Cc full", callback_data="catalogo"))
-        markup.add(types.InlineKeyboardButton("💰 Adicionar Saldo", callback_data="add_saldo"))
-        markup.add(types.InlineKeyboardButton("⭐ Área VIP", callback_data="area_vip"))
-        bot.edit_message_caption(f"Bem-vindo à Riley Store!\nSeu saldo: R$ {user['saldo']:.2f}", 
-                                 call.message.chat.id, call.message.message_id, reply_markup=markup)
-
-    # 2. CATÁLOGO
-    elif call.data == "catalogo":
-        markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("Script Básico - R$ 5", callback_data="buy_basico"))
-        markup.add(types.InlineKeyboardButton("⬅️ Voltar", callback_data="menu_principal"))
-        bot.edit_message_caption("Nosso Catálogo:", call.message.chat.id, call.message.message_id, reply_markup=markup)
-
-    # 3. SALDO
-    elif call.data == "add_saldo":
-        markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("✅ Já paguei!", callback_data="verificar_pagamento"))
-        markup.add(types.InlineKeyboardButton("⬅️ Voltar", callback_data="menu_principal"))
-        bot.edit_message_caption("Simulação: O PIX foi gerado!", call.message.chat.id, call.message.message_id, reply_markup=markup)
-
-    # ... (Restante das suas funções de VIP e Pagamento)
-
-# --- SERVIDOR ---
+# --- SERVIDOR WEB (Manter Vivo) ---
 app = Flask('')
 @app.route('/')
 def home(): return "Bot online!"
 def run(): app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
 Thread(target=run).start()
 bot.polling(none_stop=True)
-
 
