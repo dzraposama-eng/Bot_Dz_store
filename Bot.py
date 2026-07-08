@@ -44,9 +44,27 @@ def menu_principal(call):
 @bot.message_handler(commands=['start'])
 def start(message):
     foto_url = "https://img.freepik.com/vetores-gratis/fundo-de-tecnologia-digital-futurista_23-2148911068.jpg" 
+    
+    # Prepara o catálogo diretamente
+    # Chamamos o primeiro item (id 0) para exibir logo de cara
+    item = catalogo_itens[0]
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("Abrir Menu", callback_data="menu_start"))
-    bot.send_photo(message.chat.id, photo=foto_url, caption="Bem-vindo à Magic Store!", reply_markup=markup)
+    
+    # Botão de navegação (já que não tem anterior, só o próximo)
+    if len(catalogo_itens) > 1:
+        markup.add(types.InlineKeyboardButton("Próximo ➡️", callback_data="cat_1"))
+    
+    markup.add(types.InlineKeyboardButton(f"💳 Comprar (R$ {item['preco']})", callback_data=f"buy_0"))
+    
+    # Envia a foto com o primeiro item do catálogo como legenda
+    bot.send_photo(
+        message.chat.id, 
+        photo=foto_url, 
+        caption=f"🛍 **{item['nome']}**\nPreço: R$ {item['preco']:.2f}", 
+        reply_markup=markup,
+        parse_mode="Markdown"
+    )
+to=foto_url, caption="Bem-vindo à Magic Store!", reply_markup=markup)
 
 @bot.message_handler(commands=['bin'])
 def mostrar_bin(message):
