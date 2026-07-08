@@ -32,7 +32,7 @@ def get_user(user_id):
 # --- FUNÇÕES AUXILIARES ---
 def menu_principal(call):
     user = get_user(call.message.chat.id)
-    
+    markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🛒 Ver Catálogo", callback_data="cat_0"))
     markup.add(types.InlineKeyboardButton("💰 Adicionar Saldo", callback_data="add_saldo"))
     markup.add(types.InlineKeyboardButton("👤 Meu Perfil", callback_data="perfil"))
