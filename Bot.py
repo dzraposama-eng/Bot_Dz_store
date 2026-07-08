@@ -19,17 +19,33 @@ users = {} # {user_id: {'saldo': 0.0, 'vip': False, 'vip_expira': None}}
 def get_user(user_id):
     if user_id not in users:
         users[user_id] = {'saldo': 0.0, 'vip': False, 'vip_expira': None}
-    return users[user_id]
+        return users[user_id]
 
-# --- FUNÇÕES DE MENU ---
 @bot.message_handler(commands=['start'])
 def start(message):
     user = get_user(message.chat.id)
+    
+    # 1. Defina o link da sua foto aqui
+    # Pode ser uma URL da internet ou o caminho de um arquivo local
+    url_foto = "https://SEU_LINK_AQUI.jpg" 
+    
+    # 2. Envia a foto primeiro
+    try:
+        bot.send_photo(message.chat.id, url_foto)
+    except Exception as e:
+        print(f"Erro ao enviar foto: {e}")
+        bot.send_message(message.chat.id, "Erro ao carregar a imagem de apresentação.")
+
+    # 3. Define o menu
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🛒 Cc full ", callback_data="catalogo"))
+    markup.add(types.InlineKeyboardButton("🛒 Cc full", callback_data="catalogo"))
     markup.add(types.InlineKeyboardButton("💰 Adicionar Saldo", callback_data="add_saldo"))
     markup.add(types.InlineKeyboardButton("⭐ Área VIP", callback_data="area_vip"))
+    
+    # 4. Envia o texto com os botões logo abaixo
     bot.send_message(message.chat.id, f"Bem-vindo à Riley Store!\nSeu saldo: R$ {user['saldo']:.2f}", reply_markup=markup)
+
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
