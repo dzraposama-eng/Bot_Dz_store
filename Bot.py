@@ -20,8 +20,6 @@ catalogo_itens = [
     {"id": 1, "nome": "Script Intermediário", "preco": 10.0},
     {"id": 2, "nome": "Script Avançado", "preco": 20.0},
     {"id": 3, "nome": "Script Básico", "preco": 5.0},
-    {"id": 4, "nome": "Script Intermediário", "preco": 10.0},
-    {"id": 5, "nome": "Script Avançado", "preco": 20.0}
 ]
 
 def get_user(user_id):
@@ -32,7 +30,7 @@ def get_user(user_id):
 # --- COMANDOS ---
 @bot.message_handler(commands=['start'])
 def start(message):
-    foto_url = "https://img.freepik.com/vetores-gratis/fundo-de-tecnologia-digital-futurista_23-2148911068.jpg" 
+    foto_url = "https://img.jpg" 
     item = catalogo_itens[0]
     markup = types.InlineKeyboardMarkup()
     
