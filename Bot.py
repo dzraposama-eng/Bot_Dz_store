@@ -34,14 +34,20 @@ def start(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
     user = get_user(call.message.chat.id)
-    
+       
     if call.data == "catalogo":
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("Script Básico - R$ 5", callback_data="buy_basico"))
         # Produto VIP protegido
         texto = "⭐ [VIP ONLY] Script Secreto - R$ 0,00" if user['vip'] else "🔒 [VIP ONLY] Script Secreto (Bloqueado)"
         markup.add(types.InlineKeyboardButton(texto, callback_data="buy_vip"))
+        
+        # Adicione o botão voltar aqui:
+        markup.add(types.InlineKeyboardButton("⬅️ Voltar", callback_data="start"))
+        
         bot.edit_message_text("Nosso Catálogo:", call.message.chat.id, call.message.message_id, reply_markup=markup)
+
+
 
     elif call.data == "add_saldo":
         bot.send_message(call.message.chat.id, "Simulação: O PIX foi gerado! Clique abaixo para confirmar.", 
