@@ -27,7 +27,7 @@ def start(message):
     
     # 1. Defina o link da sua foto aqui
     # Pode ser uma URL da internet ou o caminho de um arquivo local
-    url_foto = "https://SEU_LINK_AQUI.jpg" 
+    url_foto = "https://file_000000006854720e888c0e372accc133.png" 
     
     # 2. Envia a foto primeiro
     try:
