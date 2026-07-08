@@ -34,8 +34,9 @@ def start(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
     user = get_user(call.message.chat.id)
-    
-    # 1. MENU PRINCIPAL (O destino do botão voltar)
+    bot.answer_callback_query(call.id) # Isso evita o "reloginho" no botão
+
+    # 1. MENU PRINCIPAL
     if call.data == "menu_principal":
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("🛒 Cc full", callback_data="catalogo"))
@@ -44,30 +45,48 @@ def callback(call):
         bot.edit_message_text(f"Bem-vindo à Riley Store!\nSeu saldo: R$ {user['saldo']:.2f}", 
                               call.message.chat.id, call.message.message_id, reply_markup=markup)
 
-    # 2. CATÁLOGO (Onde o botão voltar é criado)
+    # 2. CATÁLOGO
     elif call.data == "catalogo":
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("Script Básico - R$ 5", callback_data="buy_basico"))
-        texto = "⭐ [VIP ONLY] Script Secreto - R$ 0,00" if user['vip'] else "🔒 [VIP ONLY] Script Secreto (Bloqueado)"
+        texto = "⭐ [VIP ONLY] Script Secreto" if user['vip'] else "🔒 [VIP ONLY] (Bloqueado)"
         markup.add(types.InlineKeyboardButton(texto, callback_data="buy_vip"))
-        # Este botão chama o "menu_principal" criado acima
         markup.add(types.InlineKeyboardButton("⬅️ Voltar", callback_data="menu_principal"))
         bot.edit_message_text("Nosso Catálogo:", call.message.chat.id, call.message.message_id, reply_markup=markup)
 
-    # 3. OUTRAS FUNÇÕES
+    # 3. SALDO
     elif call.data == "add_saldo":
-        bot.send_message(call.message.chat.id, "Simulação: O PIX foi gerado! Clique abaixo para confirmar.", 
-                         reply_markup=types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("✅ Já paguei!", callback_data="verificar_pagamento")))
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("✅ Já paguei!", callback_data="verificar_pagamento"))
+        markup.add(types.InlineKeyboardButton("⬅️ Voltar", callback_data="menu_principal"))
+        bot.edit_message_text("Simulação: O PIX foi gerado! Clique abaixo para confirmar.", 
+                              call.message.chat.id, call.message.message_id, reply_markup=markup)
 
     elif call.data == "verificar_pagamento":
         user['saldo'] += 20.0
-        bot.answer_callback_query(call.id, "Pagamento aprovado! R$ 20,00 adicionados.")
-        # Após adicionar saldo, você pode querer voltar ao menu:
-        # (Opcional: descomente a linha abaixo para voltar ao início automaticamente)
-        # callback(call) # Isso chamaria a lógica novamente
+        bot.edit_message_text(f"Pagamento aprovado! Seu saldo agora é R$ {user['saldo']:.2f}", 
+                              call.message.chat.id, call.message.message_id, 
+                              reply_markup=types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("🏠 Menu Inicial", callback_data="menu_principal")))
 
+    # 4. VIP
     elif call.data == "area_vip":
-        # ... resto do seu código de VIP ...
+        status = "ATIVO" if user['vip'] else "INATIVO"
+        markup = types.InlineKeyboardMarkup()
+        if not user['vip']:
+            markup.add(types.InlineKeyboardButton("👑 Ativar VIP - R$ 15,00", callback_data="ativar_vip"))
+        markup.add(types.InlineKeyboardButton("⬅️ Voltar", callback_data="menu_principal"))
+        bot.edit_message_text(f"Status VIP: {status}\n\nAssinantes VIP acessam o Script Secreto!", 
+                              call.message.chat.id, call.message.message_id, reply_markup=markup)
+
+    elif call.data == "ativar_vip":
+        if user['saldo'] >= 15.0:
+            user['saldo'] -= 15.0
+            user['vip'] = True
+            bot.answer_callback_query(call.id, "Parabéns, você é VIP!")
+            # Retorna ao menu após ativar
+            callback(types.CallbackQuery(None, call.from_user, None, None, None, "menu_principal"))
+        else:
+            bot.answer_callback_query(call.id, "Saldo insuficiente!")
 
 
 
