@@ -23,10 +23,11 @@ function obterCompras(userId) {
     return comprasUsuarios[userId];
 }
 
-// Vitrine de Produtos (Frases Pagas)
+// 📦 VITRINE DE PRODUTOS LINKADOS COM BINS ESPECÍFICAS
 const produtos = [
     { 
         id: 1, 
+        bin: "550209", // <-- Vinculado à BIN 550209
         nome: "Frase Motivacional Premium 01", 
         preco: 5.00, 
         precoTexto: "R$ 5,00",
@@ -35,20 +36,22 @@ const produtos = [
     },
     { 
         id: 2, 
+        bin: "550209", // <-- Também vinculado à BIN 550209
         nome: "Frase de Sabedoria 02", 
         preco: 4.90,
         precoTexto: "R$ 4,90",
         demonstracao: "🌱 'A vida é igual a andar de bicicleta. Para manter o equilíbrio...'", 
         completo: "🌱 'A vida é igual a andar de bicicleta. Para manter o equilíbrio, você tem que se manter em movimento.' - Albert Einstein"
-    }, // <-- NÃO ESQUEÇA DESTA VÍRGULA
+    },
     { 
         id: 3, 
-        nome: "Sua Nova Frase Aqui 03", 
-        preco: 3.50, 
-        precoTexto: "R$ 3,50",
-        demonstracao: "🚀 'O único lugar onde o sucesso vem antes do trabalho...'", 
-        completo: "🚀 'O único lugar onde o sucesso vem antes do trabalho é no dicionário.' - Albert Einstein"
-    } // <-- A última frase da lista não leva vírgula depois da chave
+        bin: "400011", // <-- Exemplo de outra BIN (400011)
+        nome: "Frase de Foco 03", 
+        preco: 3.90,
+        precoTexto: "R$ 3,90",
+        demonstracao: "🎯 'Não olhe para os lados, mantenha o foco no seu...'", 
+        completo: "🎯 'Não olhe para os lados, mantenha o foco no seu objetivo principal.' - Desconhecido"
+    }
 ];
 
 // Menu Principal
@@ -62,39 +65,56 @@ bot.command("start", async (ctx) => {
     });
 });
 
-// 📂 COMANDO: /bin (Mostra a demonstração do produto com opção de compra)
+// 📂 COMANDO: /bin <numero_da_bin>
 bot.command("bin", async (ctx) => {
-    await exibirCarrosselBin(ctx, 0, false);
+    const binDigitada = ctx.match ? ctx.match.trim() : ""; // Captura o argumento digitado após o /bin
+
+    if (!binDigitada) {
+        return ctx.reply("❌ Por favor, informe a BIN. Exemplo: `/bin 550209`", { parse_mode: "Markdown" });
+    }
+
+    // Filtra apenas os produtos que possuem a mesma BIN digitada
+    const produtosFiltrados = produtos.filter(p => p.bin === binDigitada);
+
+    if (produtosFiltrados.length === 0) {
+        return ctx.reply(`📭 Nenhuma frase encontrada vinculada à BIN *${binDigitada}*.`, { parse_mode: "Markdown" });
+    }
+
+    // Chama o carrossel exibindo apenas a lista filtrada, começando do índice 0
+    await exibirCarrosselBinFiltrado(ctx, binDigitada, 0, false);
 });
 
-// Trata a paginação dos botões do comando /bin
-bot.callbackQuery(/^bin_page_(\d+)$/, async (ctx) => {
-    const pagina = parseInt(ctx.match[1]);
-    await exibirCarrosselBin(ctx, pagina, true);
+// Trata a paginação dos botões do comando /bin filtrado
+bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
+    const binDigitada = ctx.match[1];
+    const pagina = parseInt(ctx.match[2]);
+    await exibirCarrosselBinFiltrado(ctx, binDigitada, pagina, true);
     await ctx.answerCallbackQuery();
 });
 
-// Função para renderizar o carrossel do /bin com botão de Comprar integrado
-async function exibirCarrosselBin(ctx, index, editarMensagem) {
-    const total = produtos.length;
-    const produto = produtos[index];
+// Função para renderizar o carrossel dinâmico por BIN
+async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem) {
+    // Filtra novamente a lista para garantir os itens certos na navegação
+    const listaFiltrada = produtos.filter(p => p.bin === binTarget);
+    const total = listaFiltrada.length;
+    const produto = listaFiltrada[index];
 
-    const textoBin = `📂 *Frases Disponíveis no /bin* (${index + 1}/${total})\n\n` +
+    const textoBin = `📂 *Frases da BIN:* \`${binTarget}\` (${index + 1}/${total})\n\n` +
                       `📦 *Nome:* ${produto.nome}\n` +
                       `💰 *Preço:* ${produto.precoTexto}\n\n` +
                       `📝 *Demonstração:* _${produto.demonstracao}_`;
 
     const teclado = new InlineKeyboard();
 
-    // Botões de navegação Esquerda / Direita
+    // Cria os botões de navegação passando a BIN atual e a próxima página na rota
     if (index > 0) {
-        teclado.text("⬅️ Ant", `bin_page_${index - 1}`);
+        teclado.text("⬅️ Ant", `bin_filtro_${binTarget}_${index - 1}`);
     }
     if (index < total - 1) {
-        teclado.text("Próx ➡️", `bin_page_${index + 1}`);
+        teclado.text("Próx ➡️", `bin_filtro_${binTarget}_${index + 1}`);
     }
 
-    // Adiciona o botão de Compra direto no /bin
+    // Botão de compra usando o ID real do produto
     teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
 
@@ -225,9 +245,9 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
         await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
         await ctx.reply("🔄 Monitorando seu pagamento...");
 
-        let tentativas = 0;
+        let tentatives = 0;
         const checarPagamento = setInterval(async () => {
-            tentativas++;
+            tentatives++;
             try {
                 const statusData = await fazerRequisicao(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
                     method: "GET",
@@ -247,7 +267,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
             } catch (err) {
                 console.log("Erro ao checar: ", err);
             }
-            if (tentativas >= 60) clearInterval(checarPagamento);
+            if (tentatives >= 60) clearInterval(checarPagamento);
         }, 10000);
 
     } catch (error) {
@@ -257,4 +277,5 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 });
 
 bot.start();
-console.log("🤖 Bot com Compra no /bin Ativo!");
+console.log("🤖 Bot com filtro Inteligente de BIN Ativo!");
+
