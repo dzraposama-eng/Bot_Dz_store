@@ -23,13 +23,6 @@ function obterCompras(userId) {
     return comprasUsuarios[userId];
 }
 
-// 📚 LISTA DE FRASES DO COMANDO /BIN (Você pode mudar ou adicionar mais aqui!)
-const frasesBin = [
-    { id: 1, texto: "💡 'A mente que se abre a uma nova ideia jamais voltará ao seu tamanho original.' - Albert Einstein" },
-    { id: 2, texto: "🚀 'Comece onde você está. Use o que você tem. Faça o que você pode.' - Arthur Ashe" },
-    { id: 3, texto: "💎 'A persistência é o caminho do êxito.' - Charles Chaplin" }
-];
-
 // Vitrine de Produtos (Frases Pagas)
 const produtos = [
     { 
@@ -61,7 +54,7 @@ bot.command("start", async (ctx) => {
     });
 });
 
-// 📂 NOVO COMANDO: /bin (Inicia na primeira frase, índice 0)
+// 📂 COMANDO: /bin (Mostra a demonstração do produto com opção de compra)
 bot.command("bin", async (ctx) => {
     await exibirCarrosselBin(ctx, 0, false);
 });
@@ -73,16 +66,19 @@ bot.callbackQuery(/^bin_page_(\d+)$/, async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-// Função para renderizar o carrossel do /bin
+// Função para renderizar o carrossel do /bin com botão de Comprar integrado
 async function exibirCarrosselBin(ctx, index, editarMensagem) {
-    const total = frasesBin.length;
-    const frase = frasesBin[index];
+    const total = produtos.length;
+    const produto = produtos[index];
 
-    const textoBin = `📂 *Frases Cadastradas no /bin* (${index + 1}/${total})\n\n` +
-                      `${frase.texto}`;
+    const textoBin = `📂 *Frases Disponíveis no /bin* (${index + 1}/${total})\n\n` +
+                      `📦 *Nome:* ${produto.nome}\n` +
+                      `💰 *Preço:* ${produto.precoTexto}\n\n` +
+                      `📝 *Demonstração:* _${produto.demonstracao}_`;
 
     const teclado = new InlineKeyboard();
 
+    // Botões de navegação Esquerda / Direita
     if (index > 0) {
         teclado.text("⬅️ Ant", `bin_page_${index - 1}`);
     }
@@ -90,7 +86,10 @@ async function exibirCarrosselBin(ctx, index, editarMensagem) {
         teclado.text("Próx ➡️", `bin_page_${index + 1}`);
     }
 
-    // Se veio de um clique de botão, edita a mensagem. Se veio do comando digitado, envia uma nova.
+    // Adiciona o botão de Compra direto no /bin
+    teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
+    teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
+
     if (editarMensagem) {
         await ctx.editMessageText(textoBin, { parse_mode: "Markdown", reply_markup: teclado });
     } else {
@@ -250,5 +249,4 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 });
 
 bot.start();
-console.log("🤖 Bot com comando /bin ativo rodando!");
-
+console.log("🤖 Bot com Compra no /bin Ativo!");
