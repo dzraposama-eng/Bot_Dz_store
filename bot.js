@@ -60,7 +60,16 @@ const menuPrincipal = new InlineKeyboard()
     .text("👤 Meu Perfil", "menu_perfil");
 
 bot.command("start", async (ctx) => {
-    await ctx.reply("Olá! Seja bem-vindo ao bot de Frases Exclusivas. Escolha uma opção abaixo:", {
+    await ctx.reply("👋 Bem-vindo à Riley Store!
+
+Aqui você encontra as melhores CCs do mercado, com qualidade, segurança e atendimento dedicado.
+🛡️ Trabalhamos com um sistema rigoroso de verificação para garantir mais segurança nas transações e proteger nossa plataforma contra tentativas de fraude.
+
+💎 Produtos selecionados.
+⚡ Entrega rápida.
+🤝 Suporte sempre que precisar.
+
+Escolha uma opção no menu abaixo e boas compras! 🚀. Escolha uma opção abaixo:", {
         reply_markup: menuPrincipal,
     });
 });
