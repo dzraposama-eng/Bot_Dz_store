@@ -62,6 +62,39 @@ const produtos = [
 🪪 cpf: 25845634873`
     }
 ];
+        id: 2, 
+        bin: "516292", 
+        nome: "Cartão Nubank Platinum - Mastercard", 
+        preco: 28.00, 
+        precoTexto: "R$ 28,00",
+        demonstracao: `✨Detalhes do cartão
+💳 cartão: 516292*********
+📆 Validade: 07/2033
+🔐 Cod: ***
+
+🏳️ Bandeira: mastercard
+💠 Nível: nubank platinum
+⚜️ Tipo: credit
+🏛 Banco: nu pagamentos sa
+🌍 Pais: brazil
+
+👤Nome: marcos g almeida
+🪪 cpf: 25845634873`, 
+        completo: `✨Detalhes do cartão (LIBERADO)
+💳 Número: 516292000055267
+📆 Validade: 07/2033
+🔐 cvv: 500
+
+🏳️ Bandeira: mastercard
+💠 Nível: nubank platinum
+⚜️ Tipo: credit
+🏛 Banco: nu pagamentos sa
+🌍 Pais: brazil
+
+👤Nome: vanessa g almeida
+🪪 cpf: 25845634873`
+    }
+];
 
 // Menu Principal
 const menuPrincipal = new InlineKeyboard()
