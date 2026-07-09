@@ -27,30 +27,36 @@ function obterCompras(userId) {
 const produtos = [
     { 
         id: 1, 
-        bin: "550209", // <-- Vinculado à BIN 550209
-        nome: "Frase Motivacional Premium 01", 
-        preco: 5.00, 
-        precoTexto: "R$ 5,00",
-        demonstracao: "💥 'O sucesso não é o final, o fracasso não é fatal: o que importa é...'", 
-        completo: "💥 'O sucesso não é o final, o fracasso não é fatal: o que importa é a coragem de continuar.' - Winston Churchill"
-    },
-    { 
-        id: 2, 
-        bin: "550209", // <-- Também vinculado à BIN 550209
-        nome: "Frase de Sabedoria 02", 
-        preco: 4.90,
-        precoTexto: "R$ 4,90",
-        demonstracao: "🌱 'A vida é igual a andar de bicicleta. Para manter o equilíbrio...'", 
-        completo: "🌱 'A vida é igual a andar de bicicleta. Para manter o equilíbrio, você tem que se manter em movimento.' - Albert Einstein"
-    },
-    { 
-        id: 3, 
-        bin: "400011", // <-- Exemplo de outra BIN (400011)
-        nome: "Frase de Foco 03", 
-        preco: 3.90,
-        precoTexto: "R$ 3,90",
-        demonstracao: "🎯 'Não olhe para os lados, mantenha o foco no seu...'", 
-        completo: "🎯 'Não olhe para os lados, mantenha o foco no seu objetivo principal.' - Desconhecido"
+        bin: "516292", 
+        nome: "Cartão Nubank Platinum - Mastercard", 
+        preco: 28.00, 
+        precoTexto: "R$ 28,00",
+        demonstracao: `✨Detalhes do cartão
+💳 frase : 516292*********
+📆 Validade: 07/2033
+🔐 Cod: ***
+
+🏳️ Bandeira: mastercard
+💠 Nível: nubank platinum
+⚜️ Tipo: credit
+🏛 Banco: nu pagamentos sa
+🌍 Pais: brazil
+
+👤Nome: vanessa g almeida
+🪪 cpf: 25845634873`, 
+        completo: `✨Detalhes do cartão (LIBERADO)
+💳 Número: 5162920000000000
+📆 Validade: 07/2033
+🔐 Cod: 999
+
+🏳️ Bandeira: mastercard
+💠 Nível: nubank platinum
+⚜️ Tipo: credit
+🏛 Banco: nu pagamentos sa
+🌍 Pais: brazil
+
+👤Nome: vanessa g almeida
+🪪 cpf: 25845634873`
     }
 ];
 
@@ -59,7 +65,7 @@ const menuPrincipal = new InlineKeyboard()
     .text("🛒 Comprar Frases", "menu_comprar")
     .text("👤 Meu Perfil", "menu_perfil");
 
-// 🏠 COMANDO /START CORRIGIDO COM MULTILINHAS (CRASE)
+// 🏠 COMANDO /START
 bot.command("start", async (ctx) => {
     await ctx.reply(`👋 Bem-vindo a Riley Store!
 
@@ -77,24 +83,21 @@ Escolha uma opção no menu abaixo e boas compras! 🚀`, {
 
 // 📂 COMANDO: /bin <numero_da_bin>
 bot.command("bin", async (ctx) => {
-    const binDigitada = ctx.match ? ctx.match.trim() : ""; // Captura o argumento digitado após o /bin
+    const binDigitada = ctx.match ? ctx.match.trim() : "";
 
     if (!binDigitada) {
-        return ctx.reply("❌ Por favor, informe a BIN. Exemplo: `/bin 550209`", { parse_mode: "Markdown" });
+        return ctx.reply("❌ Por favor, informe a BIN. Exemplo: `/bin 516292`", { parse_mode: "Markdown" });
     }
 
-    // Filtra apenas os produtos que possuem a mesma BIN digitada
     const produtosFiltrados = produtos.filter(p => p.bin === binDigitada);
 
     if (produtosFiltrados.length === 0) {
         return ctx.reply(`📭 Nenhuma frase encontrada vinculada à BIN *${binDigitada}*.`, { parse_mode: "Markdown" });
     }
 
-    // Chama o carrossel exibindo apenas a lista filtrada, começando do índice 0
     await exibirCarrosselBinFiltrado(ctx, binDigitada, 0, false);
 });
 
-// Trata a paginação dos botões do comando /bin filtrado
 bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
     const binDigitada = ctx.match[1];
     const pagina = parseInt(ctx.match[2]);
@@ -102,16 +105,18 @@ bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-// Função para renderizar o carrossel dinâmico por BIN
 async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem) {
     const listaFiltrada = produtos.filter(p => p.bin === binTarget);
     const total = listaFiltrada.length;
     const produto = listaFiltrada[index];
 
-    const textoBin = `📂 *Frases da BIN:* \`${binTarget}\` (${index + 1}/${total})\n\n` +
-                      `📦 *Nome:* ${produto.nome}\n` +
-                      `💰 *Preço:* ${produto.precoTexto}\n\n` +
-                      `📝 *Demonstração:* _${produto.demonstracao}_`;
+    const dataAtual = new Date();
+    const dataFormatada = dataAtual.toLocaleDateString("pt-BR") + " às " + dataAtual.toLocaleTimeString("pt-BR");
+
+    const textoBin = `🔎 *Mostrando ${index + 1} de ${total}*\n\n` +
+                      `${produto.demonstracao}\n\n` +
+                      `💸 *Valor:* ${produto.precoTexto}\n` +
+                      `📆 *Consultado em:* ${dataFormatada}`;
 
     const teclado = new InlineKeyboard();
 
@@ -165,8 +170,8 @@ async function exibirPerfilComCompras(ctx, index) {
     } else {
         const item = listaDeCompras[index];
         textoPerfil += `(${index + 1}/${totalCompras})\n\n` +
-                       `📦 *${item.nome}*\n` +
-                       `🔓 *Conteúdo:* _${item.completo}_`;
+                       `📦 *${item.nome}*\n\n` +
+                       `${item.completo}`;
 
         if (index > 0) teclado.text("⬅️ Ant", `perfil_page_${index - 1}`);
         if (index < totalCompras - 1) teclado.text("Próx ➡️", `perfil_page_${index + 1}`);
@@ -192,7 +197,7 @@ async function enviarCarrossel(ctx, index) {
     const produto = produtos[index];
     const total = produtos.length;
 
-    const textoProduto = `📚 *Vitrine de Frases* (${index + 1}/${total})\n\n📦 *Nome:* ${produto.nome}\n💰 *Preço:* ${produto.precoTexto}\n\n📝 *Demonstração (Metade):*\n_${produto.demonstracao}_`;
+    const textoProduto = `📚 *Vitrine de Frases* (${index + 1}/${total})\n\n${produto.demonstracao}\n\n💰 *Preço:* ${produto.precoTexto}`;
     const teclado = new InlineKeyboard();
 
     if (index > 0) teclado.text("⬅️ Ant", `comprar_page_${index - 1}`);
@@ -269,7 +274,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                         comprasUser.push({ id: produto.id, nome: produto.nome, completo: produto.completo });
                     }
 
-                    await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n🔓 *${produto.completo}*`, { parse_mode: "Markdown" });
+                    await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n${produto.completo}`, { parse_mode: "Markdown" });
                 }
             } catch (err) {
                 console.log("Erro ao checar: ", err);
@@ -284,4 +289,5 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 });
 
 bot.start();
-console.log("🤖 Bot Atualizado com Sucesso!");
+console.log("🤖 Bot Atualizado com Novo Produto de Exemplo!");
+
