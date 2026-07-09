@@ -145,6 +145,48 @@ bot.command("bin", async (ctx) => {
     await exibirCarrosselBinFiltrado(ctx, binDigitada, 0, false);
 });
 
+// 👑 COMANDO EXCLUSIVO DO ADMIN: /addsaldo <id> <valor>
+bot.command("addsaldo", async (ctx) => {
+    const userId = String(ctx.from.id);
+
+    // 1. Bloqueia se não for o administrador real do bot
+    if (userId !== ADMIN_ID) {
+        return ctx.reply("❌ Você não tem permissão para usar este comando.");
+    }
+
+    // 2. Captura o texto que foi digitado após o comando
+    const argumentos = ctx.match ? ctx.match.trim().split(" ") : [];
+
+    // Verifica se enviou o ID e o Valor corretamente
+    if (argumentos.length < 2) {
+        return ctx.reply("❌ *Formato inválido!*\n\nUse assim: `/addsaldo <ID_DO_CLIENTE> <VALOR>`\nExemplo: `/addsaldo 123456789 10`", { parse_mode: "Markdown" });
+    }
+
+    const idCliente = argumentos[0].trim();
+    const valorAdicionar = parseFloat(argumentos[1].replace(",", "."));
+
+    // Valida se o valor digitado é um número real e positivo
+    if (isNaN(valorAdicionar) || valorAdicionar <= 0) {
+        return ctx.reply("❌ *Valor inválido!* Digite um número maior que zero.");
+    }
+
+    // 3. Atualiza o saldo do cliente na memória (Carteira)
+    if (saldoUsuarios[idCliente] === undefined) {
+        saldoUsuarios[idCliente] = 0.0;
+    }
+    saldoUsuarios[idCliente] += valorAdicionar;
+
+    // 4. Confirmação para o administrador
+    await ctx.reply(`✅ *Saldo adicionado com sucesso!*\n\n👤 *ID do Cliente:* \`${idCliente}\`\n💰 *Valor inserido:* R$ ${valorAdicionar.toFixed(2)}\n💳 *Saldo total atual:* R$ ${saldoUsuarios[idCliente].toFixed(2)}`, { parse_mode: "Markdown" });
+
+    // 5. Envia uma notificação automática para o cliente avisando que o saldo caiu
+    try {
+        await ctx.api.sendMessage(idCliente, `🎉 *Notificação de Depósito!*\n\nO administrador adicionou *R$ ${valorAdicionar.toFixed(2)}* à sua carteira.\n\n💰 Verifique o seu novo saldo no menu *Perfil / Carteira*!`, { parse_mode: "Markdown" });
+    } catch (error) {
+        console.log(`Não foi possível enviar mensagem direta ao cliente ${idCliente}, mas o saldo foi atualizado.`);
+    }
+});
+
 bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
     const binDigitada = ctx.match[1];
     const pagina = parseInt(ctx.match[2]);
@@ -221,7 +263,6 @@ async function exibirPerfilComCompras(ctx, index) {
     const totalCompras = listaDeCompras.length;
     const saldoAtual = obterSaldo(userId);
     
-    // Mostra o ID do usuário e o Saldo atual na Conta dele (Carteira)
     let textoPerfil = `👤 *Seu Perfil de Usuário*\n🆔 *ID:* \`${userId}\`\n💰 *Saldo em Conta:* R$ ${saldoAtual.toFixed(2)}\n\n--- \n🛍️ *Suas Compras:* `;
     const teclado = new InlineKeyboard();
 
@@ -229,7 +270,7 @@ async function exibirPerfilComCompras(ctx, index) {
         textoPerfil += `_Você ainda não comprou nenhuma frase._`;
     } else {
         const item = listaDeCompras[index];
-        textoPerfil += `(${index + 1}/${totalCompras})\n\n📦 *${item.nome}*\n\n${item.completo}`;
+        textoPerfil += `聚 (${index + 1}/${totalCompras})\n\n📦 *${item.nome}*\n\n${item.completo}`;
         if (index > 0) teclado.text("⬅️ Ant", `perfil_page_${index - 1}`);
         if (index < totalCompras - 1) teclado.text("Próx ➡️", `perfil_page_${index + 1}`);
     }
@@ -367,7 +408,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 });
 
 // =================================================================
-// 💰 SISTEMA DE ADICIONAR SALDO (CARTEIRA ATIVA)
+// 💰 SISTEMA DE ADICIONAR SALDO (AUTO VIA MERCADO PAGO)
 // =================================================================
 
 bot.callbackQuery("menu_saldo", async (ctx) => {
@@ -431,7 +472,6 @@ bot.on("message", async (ctx) => {
                     if (statusData.status === "approved") {
                         clearInterval(checarSaldo);
                         
-                        // SUCESSO DO PIX: O valor pago entra para a carteira real do usuário no bot
                         if (saldoUsuarios[ctx.from.id] === undefined) {
                             saldoUsuarios[ctx.from.id] = 0.0;
                         }
@@ -458,5 +498,5 @@ bot.on("message", async (ctx) => {
 // 🚀 INICIALIZAÇÃO FINAL DO BOT
 // =================================================================
 bot.start();
-console.log("🤖 Bot Atualizado com Carteira de Saldo!");
+console.log("🤖 Bot Atualizado com Comando /addsaldo!");
 
