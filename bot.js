@@ -15,12 +15,21 @@ const bot = new Bot(process.env.TELEGRAM_TOKEN);
 
 // Banco de dados em memória para salvar as compras de cada usuário
 const comprasUsuarios = {};
+// 💰 SISTEMA DE CARTEIRA: Armazena o saldo em conta de cada usuário
+const saldoUsuarios = {}; 
 
 function obterCompras(userId) {
     if (!comprasUsuarios[userId]) {
         comprasUsuarios[userId] = [];
     }
     return comprasUsuarios[userId];
+}
+
+function obterSaldo(userId) {
+    if (saldoUsuarios[userId] === undefined) {
+        saldoUsuarios[userId] = 0.0;
+    }
+    return saldoUsuarios[userId];
 }
 
 // 👑 ID DO TELEGRAM DO ADMINISTRADOR:
@@ -32,12 +41,12 @@ let produtos = [
         id: 1, 
         bin: "516292", 
         nome: "Cartão Nubank Platinum - Mastercard", 
-        preco: 28.00, 
-        precoTexto: "R$ 28,00",
+        preco: 2.00, 
+        precoTexto: "R$ 2,00",
         demonstracao: `✨Detalhes do cartão
 💳 cartão: 516292*********
 📆 Validade: 07/2033
-🔐 CVV: ***
+🔐 Cod: ***
 
 🏳️ Bandeira: mastercard
 💠 Nível: nubank platinum
@@ -69,7 +78,7 @@ let produtos = [
         demonstracao: `✨Detalhes do cartão
 💳 cartão: 516292*********
 📆 Validade: 07/2033
-✅️   CVV: ***
+🔐 Cod: ***
 
 🏳️ Bandeira: mastercard
 💠 Nível: nubank platinum
@@ -98,7 +107,7 @@ let produtos = [
 // Menu Principal
 const menuPrincipal = new InlineKeyboard()
     .text("🛒 Comprar ", "menu_comprar")
-    .text("👤 Perfil ", "menu_perfil")
+    .text("👤 Perfil / Carteira", "menu_perfil")
     .row() 
     .text("💰 Adicionar Saldo", "menu_saldo") 
     .url("🆘 Suporte (WhatsApp)", "https://wa.me/5500999999999");
@@ -194,6 +203,7 @@ bot.callbackQuery("menu_principal", async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
+// 👤 MENU PERFIL ATUALIZADO COM CARTEIRA DE SALDO INCLUÍDA
 bot.callbackQuery("menu_perfil", async (ctx) => {
     await exibirPerfilComCompras(ctx, 0);
     await ctx.answerCallbackQuery();
@@ -209,7 +219,10 @@ async function exibirPerfilComCompras(ctx, index) {
     const userId = ctx.from.id;
     const listaDeCompras = obterCompras(userId);
     const totalCompras = listaDeCompras.length;
-    let textoPerfil = `👤 *Seu Perfil de Usuário*\n🆔 *ID:* \`${userId}\`\n\n--- \n🛍️ *Suas Compras:* `;
+    const saldoAtual = obterSaldo(userId);
+    
+    // Mostra o ID do usuário e o Saldo atual na Conta dele (Carteira)
+    let textoPerfil = `👤 *Seu Perfil de Usuário*\n🆔 *ID:* \`${userId}\`\n💰 *Saldo em Conta:* R$ ${saldoAtual.toFixed(2)}\n\n--- \n🛍️ *Suas Compras:* `;
     const teclado = new InlineKeyboard();
 
     if (totalCompras === 0) {
@@ -246,7 +259,6 @@ async function enviarCarrossel(ctx, index) {
         });
     }
 
-    // Se o index estourar porque um produto sumiu, joga para o último disponível
     const indexAtual = index >= total ? total - 1 : index;
     const produto = produtos[indexAtual];
 
@@ -332,10 +344,8 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                 if (statusData.status === "approved") {
                     clearInterval(checarPagamento);
                     
-                    // Verifica novamente se o produto ainda está na lista para evitar duplicidade externa
                     const indexFinal = produtos.findIndex(p => p.id === produto.id);
                     if (indexFinal !== -1) {
-                        // REMOVE A FRASE DO ESTOQUE DO BOT DEFINITIVAMENTE:
                         produtos.splice(indexFinal, 1);
                     }
 
@@ -357,7 +367,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 });
 
 // =================================================================
-// 💰 SISTEMA DE ADICIONAR SALDO
+// 💰 SISTEMA DE ADICIONAR SALDO (CARTEIRA ATIVA)
 // =================================================================
 
 bot.callbackQuery("menu_saldo", async (ctx) => {
@@ -420,6 +430,13 @@ bot.on("message", async (ctx) => {
 
                     if (statusData.status === "approved") {
                         clearInterval(checarSaldo);
+                        
+                        // SUCESSO DO PIX: O valor pago entra para a carteira real do usuário no bot
+                        if (saldoUsuarios[ctx.from.id] === undefined) {
+                            saldoUsuarios[ctx.from.id] = 0.0;
+                        }
+                        saldoUsuarios[ctx.from.id] += valorDigitado;
+
                         await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n💰 R$ ${valorDigitado.toFixed(2)} foram adicionados ao seu saldo com sucesso!`);
                     }
                 } catch (err) {
@@ -441,5 +458,5 @@ bot.on("message", async (ctx) => {
 // 🚀 INICIALIZAÇÃO FINAL DO BOT
 // =================================================================
 bot.start();
-console.log("🤖 Bot Atualizado com Painel Admin Liberado!");
+console.log("🤖 Bot Atualizado com Carteira de Saldo!");
 
