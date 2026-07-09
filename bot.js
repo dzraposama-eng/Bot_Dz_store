@@ -26,8 +26,8 @@ function obterCompras(userId) {
 // 👑 ID DO TELEGRAM DO ADMINISTRADOR:
 const ADMIN_ID = "8827427559"; 
 
-// 📦 VITRINE DE PRODUTOS
-const produtos = [
+// 📦 VITRINE DE PRODUTOS (FRASES ÚNICAS - ELAS SOMEM AO SEREM COMPRADAS)
+let produtos = [
     { 
         id: 1, 
         bin: "516292", 
@@ -114,7 +114,7 @@ Aqui você encontra as melhores CCs do mercado, com qualidade, segurança e aten
 📦 Entrega rápida.
 🤝 Suporte sempre que precisar.
 
-Escolha uma option no menu abaixo e boas compras! 🚀`, {
+Escolha uma opção no menu abaixo e boas compras! 🚀`, {
         reply_markup: menuPrincipal,
     });
 });
@@ -147,6 +147,14 @@ async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem)
     const userId = String(ctx.from.id);
     const listaFiltrada = produtos.filter(p => p.bin === binTarget);
     const total = listaFiltrada.length;
+
+    if (total === 0 || !listaFiltrada[index]) {
+        const msgVazio = "📭 Esta BIN não possui mais frases disponíveis no momento.";
+        const tecladoVazio = new InlineKeyboard().text("⬅️ Voltar ao Menu", "menu_principal");
+        if (editarMensagem) return ctx.editMessageText(msgVazio, { reply_markup: tecladoVazio });
+        return ctx.reply(msgVazio, { reply_markup: tecladoVazio });
+    }
+
     const produto = listaFiltrada[index];
     const dataAtual = new Date();
     const dataFormatada = dataAtual.toLocaleDateString("pt-BR") + " às " + dataAtual.toLocaleTimeString("pt-BR");
@@ -230,9 +238,19 @@ bot.callbackQuery(/^comprar_page_(\d+)$/, async (ctx) => {
 
 async function enviarCarrossel(ctx, index) {
     const userId = String(ctx.from.id);
-    const produto = produtos[index];
     const total = produtos.length;
-    let textoProduto = `📚 *Vitrine de Frases* (${index + 1}/${total})\n\n`;
+
+    if (total === 0) {
+        return ctx.editMessageText("📭 A vitrine está vazia no momento! Volte mais tarde.", {
+            reply_markup: new InlineKeyboard().text("⬅️ Voltar ao Menu", "menu_principal")
+        });
+    }
+
+    // Se o index estourar porque um produto sumiu, joga para o último disponível
+    const indexAtual = index >= total ? total - 1 : index;
+    const produto = produtos[indexAtual];
+
+    let textoProduto = `📚 *Vitrine de Frases* (${indexAtual + 1}/${total})\n\n`;
     if (userId === ADMIN_ID) {
         textoProduto += `👑 *MODO ADMINISTRADOR (ACESSO LIBERADO)*\n\n${produto.completo}`;
     } else {
@@ -240,8 +258,8 @@ async function enviarCarrossel(ctx, index) {
     }
     
     const teclado = new InlineKeyboard();
-    if (index > 0) teclado.text("⬅️ Ant", `comprar_page_${index - 1}`);
-    if (index < total - 1) teclado.text("Próx ➡️", `comprar_page_${index + 1}`);
+    if (indexAtual > 0) teclado.text("⬅️ Ant", `comprar_page_${indexAtual - 1}`);
+    if (indexAtual < total - 1) teclado.text("Próx ➡️", `comprar_page_${indexAtual + 1}`);
     if (userId !== ADMIN_ID) {
         teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
     }
@@ -266,9 +284,13 @@ function fazerRequisicao(url, options, bodyData = null) {
 
 bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     const produtoId = parseInt(ctx.match[1]);
-    const produto = produtos.find(p => p.id === produtoId);
+    const produtoIndex = produtos.findIndex(p => p.id === produtoId);
 
-    if (!produto) return ctx.reply("Produto não encontrado.");
+    if (produtoIndex === -1) {
+        return ctx.reply("❌ Desculpe, este produto acabou de ser vendido para outro usuário!");
+    }
+
+    const produto = produtos[produtoIndex];
 
     await ctx.editMessageText("⏳ Gerando seu código Pix copia e cola, aguarde um instante...");
 
@@ -310,10 +332,15 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                 if (statusData.status === "approved") {
                     clearInterval(checarPagamento);
                     
-                    const comprasUser = obterCompras(ctx.from.id);
-                    if (!comprasUser.some(c => c.id === produto.id)) {
-                        comprasUser.push({ id: produto.id, nome: produto.nome, completo: produto.completo });
+                    // Verifica novamente se o produto ainda está na lista para evitar duplicidade externa
+                    const indexFinal = produtos.findIndex(p => p.id === produto.id);
+                    if (indexFinal !== -1) {
+                        // REMOVE A FRASE DO ESTOQUE DO BOT DEFINITIVAMENTE:
+                        produtos.splice(indexFinal, 1);
                     }
+
+                    const comprasUser = obterCompras(ctx.from.id);
+                    comprasUser.push({ id: produto.id, nome: produto.nome, completo: produto.completo });
 
                     await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n${produto.completo}`, { parse_mode: "Markdown" });
                 }
@@ -382,9 +409,9 @@ bot.on("message", async (ctx) => {
             await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
             await ctx.reply("🔄 Monitorando seu pagamento... Seu saldo subirá assim que pagar.");
 
-            let tentativasSaldo = 0;
+            let tentativesSaldo = 0;
             const checarSaldo = setInterval(async () => {
-                tentativasSaldo++;
+                tentativesSaldo++;
                 try {
                     const statusData = await fazerRequisicao(`https://api.mercadopago.com/v1/payments/${data.id}`, {
                         method: "GET",
@@ -399,7 +426,7 @@ bot.on("message", async (ctx) => {
                     console.log("Erro ao checar saldo: ", err);
                 }
 
-                if (tentativasSaldo >= 60) clearInterval(checarSaldo);
+                if (tentativesSaldo >= 60) clearInterval(checarSaldo);
             }, 10000);
 
         } catch (error) {
@@ -415,45 +442,4 @@ bot.on("message", async (ctx) => {
 // =================================================================
 bot.start();
 console.log("🤖 Bot Atualizado com Painel Admin Liberado!");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
