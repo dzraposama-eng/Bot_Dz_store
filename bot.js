@@ -1,20 +1,30 @@
 const { Bot, InlineKeyboard } = require("grammy");
 const http = require("http");
+const https = require("https");
 
-// Correção para a Render não desligar o bot (Cria um servidor falso)
+// Servidor para manter a Render online
 const server = http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "text/plain" });
     res.end("Bot Online!");
 });
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Servidor de monitoramento rodando na porta ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Monitor rodando na porta ${PORT}`));
 
-// Inicializa o bot com o token guardado na Render
+// Inicializa o bot
 const bot = new Bot(process.env.TELEGRAM_TOKEN);
 
-// Banco de dados de conteúdos (Frases) com demonstração e texto completo
+// Banco de dados em memória para salvar as compras de cada usuário
+const comprasUsuarios = {};
+
+// Função auxiliar para garantir que a lista de compras do usuário exista
+function obterCompras(userId) {
+    if (!comprasUsuarios[userId]) {
+        comprasUsuarios[userId] = [];
+    }
+    return comprasUsuarios[userId];
+}
+
+// Vitrine de Produtos (Frases)
 const produtos = [
     { 
         id: 1, 
@@ -39,60 +49,67 @@ const menuPrincipal = new InlineKeyboard()
     .text("🛒 Comprar Frases", "menu_comprar")
     .text("👤 Meu Perfil", "menu_perfil");
 
-// Comando /start
 bot.command("start", async (ctx) => {
     await ctx.reply("Olá! Seja bem-vindo ao bot de Frases Exclusivas. Escolha uma opção abaixo:", {
         reply_markup: menuPrincipal,
     });
 });
 
-// Voltar para o Menu Principal
 bot.callbackQuery("menu_principal", async (ctx) => {
-    await ctx.editMessageText("Escolha uma opção no menu abaixo:", {
-        reply_markup: menuPrincipal,
-    });
+    await ctx.editMessageText("Escolha uma opção no menu abaixo:", { reply_markup: menuPrincipal });
     await ctx.answerCallbackQuery();
 });
 
-// Opção: Perfil Aprimorado
+// Opção Perfil: Mostra o ID e inicia o carrossel das compras na página 0
 bot.callbackQuery("menu_perfil", async (ctx) => {
-    const userId = ctx.from.id;
-    const nome = ctx.from.first_name;
-    const username = ctx.from.username ? `@${ctx.from.username}` : "Não definido";
-    
-    const textoPerfil = `👤 *Seu Perfil Premium:*\n\n` +
-                        `✨ *Nome:* ${nome}\n` +
-                        `📱 *Usuário:* ${username}\n` +
-                        `🆔 *ID:* \`${userId}\`\n\n` +
-                        `--- \n` +
-                        `💡 _Dica: Use os botões abaixo para gerenciar sua conta ou voltar para o início._`;
+    await exibirPerfilComCompras(ctx, 0);
+    await ctx.answerCallbackQuery();
+});
 
-    const tecladoPerfil = new InlineKeyboard()
-        .text("📊 Histórico de Compras", "menu_historico")
-        .row()
-        .text("⬅️ Voltar", "menu_principal");
+// Trata a paginação do Histórico de Compras do Perfil
+bot.callbackQuery(/^perfil_page_(\d+)$/, async (ctx) => {
+    const pagina = parseInt(ctx.match[1]);
+    await exibirPerfilComCompras(ctx, pagina);
+    await ctx.answerCallbackQuery();
+});
+
+// Função para renderizar o Perfil com o Carrossel de Compras
+async function exibirPerfilComCompras(ctx, index) {
+    const userId = ctx.from.id;
+    const listaDeCompras = obterCompras(userId);
+    const totalCompras = listaDeCompras.length;
+
+    let textoPerfil = `👤 *Seu Perfil de Usuário*\n` +
+                      `🆔 *ID:* \`${userId}\`\n\n` +
+                      `--- \n` +
+                      `🛍️ *Suas Compras:* `;
+
+    const teclado = new InlineKeyboard();
+
+    if (totalCompras === 0) {
+        textoPerfil += `_Você ainda não comprou nenhuma frase._`;
+    } else {
+        const item = listaDeCompras[index];
+        textoPerfil += `(${index + 1}/${totalCompras})\n\n` +
+                       `📦 *${item.nome}*\n` +
+                       `🔓 *Conteúdo:* _${item.completo}_`;
+
+        // Botões de navegação do Histórico
+        if (index > 0) {
+            teclado.text("⬅️ Ant", `perfil_page_${index - 1}`);
+        }
+        if (index < totalCompras - 1) {
+            teclado.text("Próx ➡️", `perfil_page_${index + 1}`);
+        }
+    }
+
+    teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
 
     await ctx.editMessageText(textoPerfil, {
         parse_mode: "Markdown",
-        reply_markup: tecladoPerfil,
+        reply_markup: teclado,
     });
-    await ctx.answerCallbackQuery();
-});
-
-// Opção: Histórico de Compras
-bot.callbackQuery("menu_historico", async (ctx) => {
-    const textoHistorico = `📊 *Seu Histórico de Compras:*\n\n` +
-                           `📭 _Você ainda não realizou nenhuma compra no momento._\n\n` +
-                           `Assim que um pagamento via Pix for confirmado pelo bot, seus conteúdos liberados serão listados aqui!`;
-
-    const botaoVoltarPerfil = new InlineKeyboard().text("⬅️ Voltar ao Perfil", "menu_perfil");
-
-    await ctx.editMessageText(textoHistorico, {
-        parse_mode: "Markdown",
-        reply_markup: botaoVoltarPerfil,
-    });
-    await ctx.answerCallbackQuery();
-});
+}
 
 // Opção: Comprar (Inicia no índice 0)
 bot.callbackQuery("menu_comprar", async (ctx) => {
@@ -100,127 +117,109 @@ bot.callbackQuery("menu_comprar", async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-// Trata a paginação dos produtos
 bot.callbackQuery(/^comprar_page_(\d+)$/, async (ctx) => {
     const pagina = parseInt(ctx.match[1]);
     await enviarCarrossel(ctx, pagina);
     await ctx.answerCallbackQuery();
 });
 
-// Função para renderizar o carrossel
 async function enviarCarrossel(ctx, index) {
     const produto = produtos[index];
     const total = produtos.length;
 
-    const textoProduto = `📚 *Vitrine de Frases* (${index + 1}/${total})\n\n` +
-                         `📦 *Nome:* ${produto.nome}\n` +
-                         `💰 *Preço:* ${produto.precoTexto}\n\n` +
-                         `📝 *Demonstração (Metade):*\n_${produto.demonstracao}_`;
-
+    const textoProduto = `📚 *Vitrine de Frases* (${index + 1}/${total})\n\n📦 *Nome:* ${produto.nome}\n💰 *Preço:* ${produto.precoTexto}\n\n📝 *Demonstração (Metade):*\n_${produto.demonstracao}_`;
     const teclado = new InlineKeyboard();
 
-    if (index > 0) {
-        teclado.text("⬅️ Ant", `comprar_page_${index - 1}`);
-    }
-    if (index < total - 1) {
-        teclado.text("Próx ➡️", `comprar_page_${index + 1}`);
-    }
+    if (index > 0) teclado.text("⬅️ Ant", `comprar_page_${index - 1}`);
+    if (index < total - 1) teclado.text("Próx ➡️", `comprar_page_${index + 1}`);
 
     teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
 
-    await ctx.editMessageText(textoProduto, {
-        parse_mode: "Markdown",
-        reply_markup: teclado,
+    await ctx.editMessageText(textoProduto, { parse_mode: "Markdown", reply_markup: teclado });
+}
+
+// Função auxiliar para requisições HTTPS
+function fazerRequisicao(url, options, bodyData = null) {
+    return new Promise((resolve, reject) => {
+        const req = https.request(url, options, (res) => {
+            let data = "";
+            res.on("data", (chunk) => data += chunk);
+            res.on("end", () => resolve(JSON.parse(data)));
+        });
+        req.on("error", (err) => reject(err));
+        if (bodyData) req.write(JSON.stringify(bodyData));
+        req.end();
     });
 }
 
-// Lógica de Geração do PIX Automático via Mercado Pago
+// Geração do Pix e validação automatizada
 bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     const produtoId = parseInt(ctx.match[1]);
     const produto = produtos.find(p => p.id === produtoId);
 
-    if (!produto) {
-        await ctx.reply("Produto não encontrado.");
-        return;
-    }
+    if (!produto) return ctx.reply("Produto não encontrado.");
 
     await ctx.editMessageText("⏳ Gerando seu código Pix copia e cola, aguarde um instante...");
 
     try {
-        const response = await fetch("https://api.mercadopago.com/v1/payments", {
+        const url = "https://api.mercadopago.com/v1/payments";
+        const options = {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${process.env.MP_TOKEN}`,
                 "Content-Type": "application/json",
                 "X-Idempotency-Key": `${Date.now()}-${ctx.from.id}`
-            },
-            body: JSON.stringify({
-                transaction_amount: produto.preco,
-                description: `Compra: ${produto.nome}`,
-                payment_method_id: "pix",
-                payer: {
-                    email: "comprador_telegram@email.com",
-                    first_name: ctx.from.first_name
-                }
-            })
-        });
+            }
+        };
+        const body = {
+            transaction_amount: produto.preco,
+            description: `Compra: ${produto.nome}`,
+            payment_method_id: "pix",
+            payer: { email: "comprador_telegram@email.com", first_name: ctx.from.first_name }
+        };
 
-        const data = await response.json();
+        const data = await fazerRequisicao(url, options, body);
         const pixCopiaCola = data.point_of_interaction?.transaction_data?.qr_code;
         const paymentId = data.id;
 
-        if (!pixCopiaCola) {
-            throw new Error("Não foi possível gerar os dados do PIX.");
-        }
+        if (!pixCopiaCola) throw new Error("Erro Mercado Pago");
 
-        await ctx.reply(
-            `✅ *PIX Gerado com Sucesso!*\n\n` +
-            `💵 *Valor:* ${produto.precoTexto}\n\n` +
-            `👇 Clique na mensagem abaixo para copiar o código Pix e pagar no seu banco:`,
-            { parse_mode: "Markdown" }
-        );
-
+        await ctx.reply(`✅ *PIX Gerado!*\n\n💵 *Valor:* ${produto.precoTexto}\n\n👇 Copie o código Pix abaixo:`, { parse_mode: "Markdown" });
         await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
-        
-        await ctx.reply("🔄 Nosso sistema está monitorando o seu pagamento. Assim que concluir, o conteúdo completo aparecerá aqui automaticamente.");
+        await ctx.reply("🔄 Monitorando seu pagamento...");
 
         let tentativas = 0;
-        const maxTentativas = 60; 
-
         const checarPagamento = setInterval(async () => {
             tentativas++;
             try {
-                const statusRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+                const statusData = await fazerRequisicao(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+                    method: "GET",
                     headers: { "Authorization": `Bearer ${process.env.MP_TOKEN}` }
                 });
-                const statusData = await statusRes.json();
 
                 if (statusData.status === "approved") {
                     clearInterval(checarPagamento);
-                    await ctx.reply(
-                        `🎉 *PAGAMENTO CONFIRMADO!* 🎉\n\n` +
-                        `Muito obrigado pela sua compra. Aqui está o seu conteúdo completo:\n\n` +
-                        `🔓 *${produto.completo}*`, 
-                        { parse_mode: "Markdown" }
-                    );
+                    
+                    // SALVA A COMPRA EXCLUSIVAMENTE NO PERFIL DO USUÁRIO
+                    const comprasUser = obterCompras(ctx.from.id);
+                    if (!comprasUser.some(c => c.id === produto.id)) {
+                        comprasUser.push({ id: produto.id, nome: produto.nome, completo: produto.completo });
+                    }
+
+                    await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n🔓 *${produto.completo}*`, { parse_mode: "Markdown" });
                 }
             } catch (err) {
-                console.log("Erro ao checar pagamento: ", err);
+                console.log("Erro ao checar: ", err);
             }
-
-            if (tentativas >= maxTentativas) {
-                clearInterval(checarPagamento);
-            }
+            if (tentativas >= 60) clearInterval(checarPagamento);
         }, 10000);
 
     } catch (error) {
         console.error(error);
-        await ctx.reply("❌ Ocorreu um erro ao processar o seu Pix com o Mercado Pago. Tente novamente mais tarde.");
+        await ctx.reply("❌ Erro ao processar o seu Pix.");
     }
 });
 
-// Inicialização do Bot
 bot.start();
-console.log("🤖 Bot Atualizado com Suporte a Porta Iniciado!");
-
+console.log("🤖 Bot com Perfil Compacto e Navegável Iniciado!");
