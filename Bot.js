@@ -1,7 +1,8 @@
 const { Bot, InlineKeyboard } = require("grammy");
 
 // Substitua pelo token do seu bot
-const bot = new Bot("SEU_TOKEN_AQUI");
+const bot = new Bot(process.env.TELEGRAM_TOKEN);
+
 
 // Simulação de um banco de dados de produtos para a opção comprar
 const produtos = [
