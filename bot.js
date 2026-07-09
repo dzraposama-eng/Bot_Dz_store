@@ -59,20 +59,22 @@ const menuPrincipal = new InlineKeyboard()
     .text("🛒 Comprar Frases", "menu_comprar")
     .text("👤 Meu Perfil", "menu_perfil");
 
-bot.command("start", async (ctx) => {
-    await ctx.reply("👋 Bem-vindo à Riley Store!
+
+    bot.command("start", async (ctx) => {
+    await ctx.reply(`👋 Bem-vindo a Riley Store!
 
 Aqui você encontra as melhores CCs do mercado, com qualidade, segurança e atendimento dedicado.
-🛡️ Trabalhamos com um sistema rigoroso de verificação para garantir mais segurança nas transações e proteger nossa plataforma contra tentativas de fraude.
+🛡️ Trabalhamos com um sistema rigoroso de verificação para garantir mais segurança nas transações e proteger nossa plataforma.
 
-💎 Produtos selecionados.
-⚡ Entrega rápida.
+⚡ Produtos selecionados.
+📦 Entrega rápida.
 🤝 Suporte sempre que precisar.
 
-Escolha uma opção no menu abaixo e boas compras! 🚀. Escolha uma opção abaixo:", {
+Escolha uma opção no menu abaixo e boas compras! 🚀`, {
         reply_markup: menuPrincipal,
     });
 });
+
 
 // 📂 COMANDO: /bin <numero_da_bin>
 bot.command("bin", async (ctx) => {
