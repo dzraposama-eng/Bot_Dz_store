@@ -4,12 +4,23 @@ const { Bot, InlineKeyboard } = require("grammy");
 const bot = new Bot(process.env.TELEGRAM_TOKEN);
 
 
-// Simulação de um banco de dados de produtos para a opção comprar
 const produtos = [
-    { id: 1, nome: "Produto Alfa", preco: "R$ 29,90" },
-    { id: 2, nome: "Produto Beta", preco: "R$ 49,90" },
-    { id: 3, nome: "Produto Gama", preco: "R$ 79,90" },
-    { id: 4, nome: "Produto Ômega", preco: "R$ 99,90" }
+    { 
+        id: 1, 
+        nome: "Frase Motivacional Premium 01", 
+        preco: "R$ 5,00",
+        demonstracao: "💥 'O sucesso não é o final, o fracasso não é fatal: o que importa é...'", 
+        completo: "💥 'O sucesso não é o final, o fracasso não é fatal: o que importa é a coragem de continuar.' - Winston Churchill"
+    },
+    { 
+        id: 2, 
+        nome: "Frase de Sabedoria 02", 
+        preco: "R$ 4,90",
+        demonstracao: "🌱 'A vida é igual a andar de bicicleta. Para manter o equilíbrio...'", 
+        completo: "🌱 'A vida é igual a andar de bicicleta. Para manter o equilíbrio, você tem que se manter em movimento.' - Albert Einstein"
+    }
+];
+
 ];
 
 // Menu Principal
