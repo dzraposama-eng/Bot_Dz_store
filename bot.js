@@ -60,7 +60,7 @@ const produtos = [
 
 👤Nome: vanessa g almeida
 🪪 cpf: 25845634873`
-    }
+    } , { //
         id: 2, 
         bin: "516292", 
         nome: "Cartão Nubank Platinum - Mastercard", 
