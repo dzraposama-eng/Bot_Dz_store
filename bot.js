@@ -8,7 +8,7 @@ const produtos = [
     { 
         id: 1, 
         nome: "Frase Motivacional Premium 01", 
-        preco: 5.00, // Número puro para a API calcular
+        preco: 5.00, 
         precoTexto: "R$ 5,00",
         demonstracao: "💥 'O sucesso não é o final, o fracasso não é fatal: o que importa é...'", 
         completo: "💥 'O sucesso não é o final, o fracasso não é fatal: o que importa é a coragem de continuar.' - Winston Churchill"
@@ -23,31 +23,62 @@ const produtos = [
     }
 ];
 
+// Menu Principal
+const menuPrincipal = new InlineKeyboard()
+    .text("🛒 Comprar Frases", "menu_comprar")
+    .text("👤 Meu Perfil", "menu_perfil");
+
+// Comando /start
+bot.command("start", async (ctx) => {
+    await ctx.reply("Olá! Seja bem-vindo ao bot de Frases Exclusivas. Escolha uma opção abaixo:", {
+        reply_markup: menuPrincipal,
+    });
+});
+
+// Voltar para o Menu Principal
+bot.callbackQuery("menu_principal", async (ctx) => {
+    await ctx.editMessageText("Escolha uma opção no menu abaixo:", {
+        reply_markup: menuPrincipal,
+    });
+    await ctx.answerCallbackQuery();
+});
+
 // Opção: Perfil Aprimorado
 bot.callbackQuery("menu_perfil", async (ctx) => {
     const userId = ctx.from.id;
     const nome = ctx.from.first_name;
+    const username = ctx.from.username ? `@${ctx.from.username}` : "Não definido";
     
-    // Simulação de dados (Em um bot profissional, isso viria de um banco de dados como MongoDB ou Firebase)
-    const totalCompras = 0; // Aqui você buscaria no seu banco de dados
-    const dataCadastro = "09/07/2026"; 
-
     const textoPerfil = `👤 *Seu Perfil Premium:*\n\n` +
                         `✨ *Nome:* ${nome}\n` +
-                        `🆔 *ID:* \`${userId}\`\n` +
-                        `🛍️ *Total de Frases Compradas:* ${totalCompras}\n` +
-                        `📅 *Membro desde:* ${dataCadastro}\n\n` +
+                        `📱 *Usuário:* ${username}\n` +
+                        `🆔 *ID:* \`${userId}\`\n\n` +
                         `--- \n` +
-                        `💡 _Dica: Quanto mais frases você compra, mais descontos ganha!_`;
+                        `💡 _Dica: Use os botões abaixo para gerenciar sua conta ou voltar para o início._`;
 
     const tecladoPerfil = new InlineKeyboard()
-        .text("⬅️ Voltar", "menu_principal")
+        .text("📊 Histórico de Compras", "menu_historico")
         .row()
-        .text("📊 Ver Histórico de Compras", "menu_historico"); // Nova opção que podemos criar
+        .text("⬅️ Voltar", "menu_principal");
 
     await ctx.editMessageText(textoPerfil, {
         parse_mode: "Markdown",
         reply_markup: tecladoPerfil,
+    });
+    await ctx.answerCallbackQuery();
+});
+
+// Opção: Histórico de Compras (Tela Informativa)
+bot.callbackQuery("menu_historico", async (ctx) => {
+    const textoHistorico = `📊 *Seu Histórico de Compras:*\n\n` +
+                           `📭 _Você ainda não realizou nenhuma compra no momento._\n\n` +
+                           `Assim que um pagamento via Pix for confirmado pelo bot, seus conteúdos liberados serão listados aqui!`;
+
+    const botaoVoltarPerfil = new InlineKeyboard().text("⬅️ Voltar ao Perfil", "menu_perfil");
+
+    await ctx.editMessageText(textoHistorico, {
+        parse_mode: "Markdown",
+        reply_markup: botaoVoltarPerfil,
     });
     await ctx.answerCallbackQuery();
 });
@@ -107,28 +138,25 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     await ctx.editMessageText("⏳ Gerando seu código Pix copia e cola, aguarde um instante...");
 
     try {
-        // Chamada direta para a API do Mercado Pago criando a ordem Pix
         const response = await fetch("https://api.mercadopago.com/v1/payments", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${process.env.MP_TOKEN}`,
                 "Content-Type": "application/json",
-                "X-Idempotency-Key": `${Date.now()}-${ctx.from.id}` // Chave para evitar duplicados
+                "X-Idempotency-Key": `${Date.now()}-${ctx.from.id}`
             },
             body: JSON.stringify({
                 transaction_amount: produto.preco,
                 description: `Compra: ${produto.nome}`,
                 payment_method_id: "pix",
                 payer: {
-                    email: "comprador_telegram@email.com", // E-mail genérico exigido pela API
+                    email: "comprador_telegram@email.com",
                     first_name: ctx.from.first_name
                 }
             })
         });
 
         const data = await response.json();
-
-        // Extrai o Pix Copia e Cola retornado pelo Mercado Pago
         const pixCopiaCola = data.point_of_interaction?.transaction_data?.qr_code;
         const paymentId = data.id;
 
@@ -136,7 +164,6 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
             throw new Error("Não foi possível gerar os dados do PIX.");
         }
 
-        // Envia as instruções e o código para o cliente copiar
         await ctx.reply(
             `✅ *PIX Gerado com Sucesso!*\n\n` +
             `💵 *Valor:* ${produto.precoTexto}\n\n` +
@@ -144,12 +171,10 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
             { parse_mode: "Markdown" }
         );
 
-        // Mensagem isolada contendo apenas o código para facilitar o ato de copiar no celular
         await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
         
         await ctx.reply("🔄 Nosso sistema está monitorando o seu pagamento. Assim que concluir, o conteúdo completo aparecerá aqui automaticamente.");
 
-        // Loop de checagem automática (Verifica a cada 10 segundos por até 10 minutos)
         let tentativas = 0;
         const maxTentativas = 60; 
 
@@ -161,7 +186,6 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                 });
                 const statusData = await statusRes.json();
 
-                // Se o status for aprovado, para o loop e entrega o conteúdo completo!
                 if (statusData.status === "approved") {
                     clearInterval(checarPagamento);
                     await ctx.reply(
@@ -175,7 +199,6 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                 console.log("Erro ao checar pagamento: ", err);
             }
 
-            // Cancela se estourar o tempo limite de 10 minutos esperando o pagamento
             if (tentativas >= maxTentativas) {
                 clearInterval(checarPagamento);
             }
@@ -189,4 +212,4 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 
 // Inicialização do Bot
 bot.start();
-console.log("🤖 Bot com Pix Automático Iniciado!");
+console.log("🤖 Bot Atualizado com Perfil e Pix Iniciado!");
