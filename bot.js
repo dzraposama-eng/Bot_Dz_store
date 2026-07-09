@@ -59,8 +59,8 @@ const menuPrincipal = new InlineKeyboard()
     .text("🛒 Comprar Frases", "menu_comprar")
     .text("👤 Meu Perfil", "menu_perfil");
 
-
-    bot.command("start", async (ctx) => {
+// 🏠 COMANDO /START CORRIGIDO COM MULTILINHAS (CRASE)
+bot.command("start", async (ctx) => {
     await ctx.reply(`👋 Bem-vindo a Riley Store!
 
 Aqui você encontra as melhores CCs do mercado, com qualidade, segurança e atendimento dedicado.
@@ -74,7 +74,6 @@ Escolha uma opção no menu abaixo e boas compras! 🚀`, {
         reply_markup: menuPrincipal,
     });
 });
-
 
 // 📂 COMANDO: /bin <numero_da_bin>
 bot.command("bin", async (ctx) => {
@@ -105,7 +104,6 @@ bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
 
 // Função para renderizar o carrossel dinâmico por BIN
 async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem) {
-    // Filtra novamente a lista para garantir os itens certos na navegação
     const listaFiltrada = produtos.filter(p => p.bin === binTarget);
     const total = listaFiltrada.length;
     const produto = listaFiltrada[index];
@@ -117,7 +115,6 @@ async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem)
 
     const teclado = new InlineKeyboard();
 
-    // Cria os botões de navegação passando a BIN atual e a próxima página na rota
     if (index > 0) {
         teclado.text("⬅️ Ant", `bin_filtro_${binTarget}_${index - 1}`);
     }
@@ -125,7 +122,6 @@ async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem)
         teclado.text("Próx ➡️", `bin_filtro_${binTarget}_${index + 1}`);
     }
 
-    // Botão de compra usando o ID real do produto
     teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
 
@@ -256,9 +252,9 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
         await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
         await ctx.reply("🔄 Monitorando seu pagamento...");
 
-        let tentatives = 0;
+        let tentativas = 0;
         const checarPagamento = setInterval(async () => {
-            tentatives++;
+            tentativas++;
             try {
                 const statusData = await fazerRequisicao(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
                     method: "GET",
@@ -278,7 +274,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
             } catch (err) {
                 console.log("Erro ao checar: ", err);
             }
-            if (tentatives >= 60) clearInterval(checarPagamento);
+            if (tentativas >= 60) clearInterval(checarPagamento);
         }, 10000);
 
     } catch (error) {
@@ -288,5 +284,4 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 });
 
 bot.start();
-console.log("🤖 Bot com filtro Inteligente de BIN Ativo!");
-
+console.log("🤖 Bot Atualizado com Sucesso!");
