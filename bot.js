@@ -23,10 +23,10 @@ function obterCompras(userId) {
     return comprasUsuarios[userId];
 }
 
-// 👑 COLOQUE O SEU ID DO TELEGRAM AQUI ENTRE AS ASPAS:
+// 👑 ID DO TELEGRAM DO ADMINISTRADOR:
 const ADMIN_ID = "8827427559"; 
 
-// 📦 VITRINE DE PRODUTOS LINKADOS COM BINS ESPECÍFICAS
+// 📦 VITRINE DE PRODUTOS
 const produtos = [
     { 
         id: 1, 
@@ -101,7 +101,7 @@ const menuPrincipal = new InlineKeyboard()
     .text("👤 Perfil ", "menu_perfil")
     .row() 
     .text("💰 Adicionar Saldo", "menu_saldo") 
-    .url("🆘 Suporte (WhatsApp)", "https://wa.me/5500999999999"); // TODO: Lembra-te de alterar para o número real do Admin
+    .url("🆘 Suporte (WhatsApp)", "https://wa.me/5500999999999");
 
 // 🏠 COMANDO /START
 bot.command("start", async (ctx) => {
@@ -114,7 +114,7 @@ Aqui você encontra as melhores CCs do mercado, com qualidade, segurança e aten
 📦 Entrega rápida.
 🤝 Suporte sempre que precisar.
 
-Escolha uma opção no menu abaixo e boas compras! 🚀`, {
+Escolha uma option no menu abaixo e boas compras! 🚀`, {
         reply_markup: menuPrincipal,
     });
 });
@@ -201,25 +201,19 @@ async function exibirPerfilComCompras(ctx, index) {
     const userId = ctx.from.id;
     const listaDeCompras = obterCompras(userId);
     const totalCompras = listaDeCompras.length;
-    let textoPerfil = `👤 *Seu Perfil de Usuário*\n` +
-                      `🆔 *ID:* \`${userId}\`\n\n` +
-                      `--- \n` +
-                      `🛍️ *Suas Compras:* `;
+    let textoPerfil = `👤 *Seu Perfil de Usuário*\n🆔 *ID:* \`${userId}\`\n\n--- \n🛍️ *Suas Compras:* `;
     const teclado = new InlineKeyboard();
 
     if (totalCompras === 0) {
         textoPerfil += `_Você ainda não comprou nenhuma frase._`;
     } else {
         const item = listaDeCompras[index];
-        textoPerfil += `(${index + 1}/${totalCompras})\n\n` +
-                       `📦 *${item.nome}*\n\n` +
-                       `${item.completo}`;
+        textoPerfil += `(${index + 1}/${totalCompras})\n\n📦 *${item.nome}*\n\n${item.completo}`;
         if (index > 0) teclado.text("⬅️ Ant", `perfil_page_${index - 1}`);
         if (index < totalCompras - 1) teclado.text("Próx ➡️", `perfil_page_${index + 1}`);
     }
 
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
-
     await ctx.editMessageText(textoPerfil, { parse_mode: "Markdown", reply_markup: teclado });
 }
 
@@ -304,9 +298,9 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
         await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
         await ctx.reply("🔄 Monitorando seu pagamento...");
 
-        let tentatives = 0;
+        let tentativas = 0;
         const checarPagamento = setInterval(async () => {
-            tentatitvas++;
+            tentativas++;
             try {
                 const statusData = await fazerRequisicao(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
                     method: "GET",
@@ -326,7 +320,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
             } catch (err) {
                 console.log("Erro ao checar: ", err);
             }
-            if (tentatitvas >= 60) clearInterval(checarPagamento);
+            if (tentativas >= 60) clearInterval(checarPagamento);
         }, 10000);
 
     } catch (error) {
@@ -336,41 +330,35 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 });
 
 // =================================================================
-// 💰 SISTEMA NOVO DE ADICIONAR SALDO (INSERIDO COM SUCESSO)
+// 💰 SISTEMA DE ADICIONAR SALDO
 // =================================================================
 
-// 1. Quando o utilizador clica no botão "Adicionar Saldo"
 bot.callbackQuery("menu_saldo", async (ctx) => {
     await ctx.answerCallbackQuery();
-    
     await ctx.reply("💵 *Digite o valor que deseja adicionar em saldo:*\n\nExemplo: `10` ou `25.50` \n_(Valor mínimo: R$ 5,00)_", {
-        parse_mode: "Markdown",
         reply_markup: { force_reply: true }
     });
 });
 
-// 2. Processa o valor digitado e gera o Pix de Saldo
 bot.on("message", async (ctx) => {
-    // Verifica se a mensagem atual é uma resposta a outra mensagem
     const reply = ctx.message.reply_to_message;
-    if (!reply || !reply.text) return; // Se não for uma resposta, ignora
+    if (!reply || !reply.text) return; 
 
-    // Verifica se a mensagem que o bot enviou antes era o pedido de saldo
     if (reply.text.includes("Digite o valor que deseja adicionar")) {
         const valorDigitado = parseFloat(ctx.message.text.replace(",", "."));
 
         if (isNaN(valorDigitado) || valorDigitado < 5) {
-            return ctx.reply("❌ *Valor inválido!* O valor mínimo é de R$ 5,00.", { parse_mode: "Markdown" });
+            return ctx.reply("❌ *Valor inválido!* O valor mínimo é de R$ 5,00.");
         }
 
-        const msgAviso = await ctx.reply("⏳ _Gerando seu Pix de Saldo... Aguarde._", { parse_mode: "Markdown" });
+        const msgAviso = await ctx.reply("⏳ _Gerando seu Pix de Saldo... Aguarde._");
 
         try {
             const url = "https://api.mercadopago.com/v1/payments";
             const options = {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${process.env.MP_TOKEN}`, // Usa o seu token já configurado
+                    "Authorization": `Bearer ${process.env.MP_TOKEN}`,
                     "Content-Type": "application/json",
                     "X-Idempotency-Key": `${Date.now()}-${ctx.from.id}`
                 }
@@ -383,22 +371,20 @@ bot.on("message", async (ctx) => {
                 payer: { email: "comprador_telegram@email.com" }
             };
 
-            // Usa a sua função nativa fazerRequisicao
             const data = await fazerRequisicao(url, options, body);
             const pixCopiaCola = data.point_of_interaction?.transaction_data?.qr_code;
 
             if (!pixCopiaCola) throw new Error("Erro Mercado Pago");
 
-            await ctx.api.deleteMessage(ctx.chat.id, msgAviso.message_id);
+            try { await ctx.api.deleteMessage(ctx.chat.id, msgAviso.message_id); } catch(e){}
 
             await ctx.reply(`✅ *PIX de Saldo Gerado!*\n\n💵 *Valor:* R$ ${valorDigitado.toFixed(2)}\n\n👇 Copie o código abaixo:`);
             await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
             await ctx.reply("🔄 Monitorando seu pagamento... Seu saldo subirá assim que pagar.");
 
-            // Sistema de checagem automática
-            let tentativas = 0;
+            let tentativasSaldo = 0;
             const checarSaldo = setInterval(async () => {
-                tentativas++;
+                tentativasSaldo++;
                 try {
                     const statusData = await fazerRequisicao(`https://api.mercadopago.com/v1/payments/${data.id}`, {
                         method: "GET",
@@ -413,7 +399,7 @@ bot.on("message", async (ctx) => {
                     console.log("Erro ao checar saldo: ", err);
                 }
 
-                if (tentativas >= 60) clearInterval(checarSaldo);
+                if (tentativasSaldo >= 60) clearInterval(checarSaldo);
             }, 10000);
 
         } catch (error) {
@@ -423,4 +409,51 @@ bot.on("message", async (ctx) => {
         }
     }
 });
+
+// =================================================================
+// 🚀 INICIALIZAÇÃO FINAL DO BOT
+// =================================================================
+bot.start();
+console.log("🤖 Bot Atualizado com Painel Admin Liberado!");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
