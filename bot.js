@@ -97,8 +97,8 @@ const produtos = [
 
 // Menu Principal
 const menuPrincipal = new InlineKeyboard()
-    .text("🛒 Comprar", "menu_comprar")
-    .text("👤 Perfil", "menu_perfil")
+    .text("🛒 Comprar ", "menu_comprar")
+    .text("👤 Perfil ", "menu_perfil")
     .row() // Quebra a linha
     .text("💰 Adicionar Saldo", "menu_saldo") // <--- ADICIONE ESTA LINHA
     .url("🆘 Suporte (WhatsApp)", "https://wa.me/5500999999999"); 
