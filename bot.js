@@ -99,8 +99,10 @@ const produtos = [
 const menuPrincipal = new InlineKeyboard()
     .text("🛒 Comprar Frases", "menu_comprar")
     .text("👤 Meu Perfil", "menu_perfil")
-    .row() // Quebra a linha para o botão de suporte ficar embaixo sozinho e bonito
-    .url("🆘 Suporte (WhatsApp)", "https://wa.me/559898970023299?text=%E2%9C%85%EF%B8%8F%F0%9F%8D%81"); // <--- ADICIONE APENAS ESSA LINHA (Troque o número pelo do ADM)
+    .row() // Quebra a linha
+    .text("💰 Adicionar Saldo", "menu_saldo") // <--- ADICIONE ESTA LINHA
+    .url("🆘 Suporte (WhatsApp)", "https://wa.me/5500999999999"); 
+
 
 
 // 🏠 COMANDO /START
