@@ -59,7 +59,7 @@ const produtos = [
 🌍 Pais: brazil
 
 👤Nome: vanessa g almeida
-🪪 cpf: 25845634873`
+🪪 cpf: 25845680873`
     } , { //
         id: 2, 
         bin: "516292", 
@@ -90,7 +90,7 @@ const produtos = [
 🏛 Banco: nu pagamentos sa
 🌍 Pais: brazil
 
-👤Nome: vanessa g almeida
+👤Nome: marcos g almeida
 🪪 cpf: 25845634873`
     }
 ];
