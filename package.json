@@ -1,11 +1,1 @@
-{
-  "name": "bot-dz-store",
-  "version": "1.0.0",
-  "main": "bot.js",
-  "scripts": {
-    "start": "node bot.js"
-  },
-  "dependencies": {
-    "grammy": "^1.21.1"
-  }
-}
+npm install @supabase/supabase-js
