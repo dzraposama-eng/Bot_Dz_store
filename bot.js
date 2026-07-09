@@ -37,7 +37,7 @@ let produtos = [
         demonstracao: `✨Detalhes do cartão
 💳 cartão: 516292*********
 📆 Validade: 07/2033
-🔐 Cod: ***
+🔐 CVV: ***
 
 🏳️ Bandeira: mastercard
 💠 Nível: nubank platinum
@@ -64,12 +64,12 @@ let produtos = [
         id: 2, 
         bin: "516292", 
         nome: "Cartão Nubank Platinum - Mastercard", 
-        preco: 28.00, 
-        precoTexto: "R$ 28,00",
+        preco: 2.00, 
+        precoTexto: "R$ 2,00",
         demonstracao: `✨Detalhes do cartão
 💳 cartão: 516292*********
 📆 Validade: 07/2033
-🔐 Cod: ***
+✅️   CVV: ***
 
 🏳️ Bandeira: mastercard
 💠 Nível: nubank platinum
