@@ -1,6 +1,7 @@
 const { Bot, InlineKeyboard } = require("grammy");
 const http = require("http");
 const https = require("https");
+const { createClient } = require("@supabase/supabase-js");
 
 // Servidor para manter a Render online
 const server = http.createServer((req, res) => {
@@ -13,98 +14,67 @@ server.listen(PORT, () => console.log(`Monitor rodando na porta ${PORT}`));
 // Inicializa o bot
 const bot = new Bot(process.env.TELEGRAM_TOKEN);
 
-// Banco de dados em memória para salvar as compras de cada usuário
-const comprasUsuarios = {};
-// 💰 SISTEMA DE CARTEIRA: Armazena o saldo em conta de cada usuário
-const saldoUsuarios = {}; 
+// 🔥 CONEXÃO COM O BANCO DE DADOS SUPABASE
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-function obterCompras(userId) {
-    if (!comprasUsuarios[userId]) {
-        comprasUsuarios[userId] = [];
+// Funções para gerenciar o Saldo no Banco de Dados
+async function obterSaldo(userId) {
+    const idStr = String(userId);
+    const { data, error } = await supabase.from("carteiras").select("saldo").eq("user_id", idStr).single();
+    if (error || !data) {
+        // Se o usuário não existir no banco, cria ele com saldo 0
+        await supabase.from("carteiras").insert([{ user_id: idStr, saldo: 0.0 }]);
+        return 0.0;
     }
-    return comprasUsuarios[userId];
+    return parseFloat(data.saldo);
 }
 
-function obterSaldo(userId) {
-    if (saldoUsuarios[userId] === undefined) {
-        saldoUsuarios[userId] = 0.0;
-    }
-    return saldoUsuarios[userId];
+async function atualizarSaldo(userId, novoSaldo) {
+    const idStr = String(userId);
+    await supabase.from("carteiras").upsert({ user_id: idStr, saldo: novoSaldo });
+}
+
+async function obterCompras(userId) {
+    const idStr = String(userId);
+    const { data, error } = await supabase.from("historico_compras").select("*").eq("user_id", idStr).order("id", { ascending: true });
+    if (error || !data) return [];
+    return data;
+}
+
+async function salvarCompra(userId, produto) {
+    const idStr = String(userId);
+    await supabase.from("historico_compras").insert([{
+        user_id: idStr,
+        produto_id: produto.id,
+        nome: produto.nome,
+        completo: produto.completo
+    }]);
 }
 
 // 👑 ID DO TELEGRAM DO ADMINISTRADOR:
 const ADMIN_ID = "8827427559"; 
 
-// 📦 VITRINE DE PRODUTOS (FRASES ÚNICAS - ELAS SOMEM AO SEREM COMPRADAS)
+// 📦 VITRINE DE PRODUTOS
 let produtos = [
     { 
         id: 1, 
         bin: "516292", 
         nome: "Cartão Nubank Platinum - Mastercard", 
-        preco: 25.00, 
-        precoTexto: "R$ 25,00",
-        demonstracao: `✨Detalhes do cartão
-💳 cartão: 516292*********
-📆 Validade: 07/2033
-🔐 Cod: ***
-
-🏳️ Bandeira: mastercard
-💠 Nível: nubank platinum
-⚜️ Tipo: credit
-🏛 Banco: nu pagamentos sa
-🌍 Pais: brazil
-
-👤Nome: vanessa g almeida
-🪪 cpf: 25845634873`, 
-        completo: `✨Detalhes do cartão (LIBERADO)
-💳 cartão: 516292000055267
-📆 Validade: 07/2033
-🔐 cvv: 367
-
-🏳️ Bandeira: mastercard
-💠 Nível: nubank platinum
-⚜️ Tipo: credit
-🏛 Banco: nu pagamentos sa
-🌍 Pais: brazil
-
-👤Nome: vanessa g almeida
-🪪 cpf: 25845680873`
+        preco: 2.00, 
+        precoTexto: "R$ 2,00",
+        demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845634873`, 
+        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/2033\n🔐 cvv: 363\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845680873`
     } , { 
         id: 2, 
         bin: "516292", 
         nome: "Cartão Nubank Platinum - Mastercard", 
         preco: 2.00, 
         precoTexto: "R$ 2,00",
-        demonstracao: `✨Detalhes do cartão
-💳 cartão: 516292*********
-📆 Validade: 07/2033
-🔐 Cod: ***
-
-🏳️ Bandeira: mastercard
-💠 Nível: nubank platinum
-⚜️ Tipo: credit
-🏛 Banco: nu pagamentos sa
-🌍 Pais: brazil
-
-👤Nome: marcos g almeida
-🪪 cpf: 25845634873`, 
-        completo: `✨Detalhes do cartão (LIBERADO)
-💳 cartão: 516292000055267
-📆 Validade: 07/2033
-🔐 cvv: 500
-
-🏳️ Bandeira: mastercard
-💠 Nível: nubank platinum
-⚜️ Tipo: credit
-🏛 Banco: nu pagamentos sa
-🌍 Pais: brazil
-
-👤Nome: marcos g almeida
-🪪 cpf: 25845634873`
+        demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`, 
+        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/2033\n🔐 cvv: 500\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`
     }
 ];
 
-// Menu Principal
 const menuPrincipal = new InlineKeyboard()
     .text("🛒 Comprar ", "menu_comprar")
     .text("👤 Perfil / Carteira", "menu_perfil")
@@ -112,72 +82,41 @@ const menuPrincipal = new InlineKeyboard()
     .text("💰 Adicionar Saldo", "menu_saldo") 
     .url("🆘 Suporte (WhatsApp)", "https://wa.me/5500999999999");
 
-// 🏠 COMANDO /START
 bot.command("start", async (ctx) => {
-    await ctx.reply(`👋 Bem-vindo a Riley Store!
-
-Aqui você encontra as melhores CCs do mercado, com qualidade, segurança e atendimento dedicado.
-🛡️ Trabalhamos com um sistema rigoroso de verificação para garantir mais segurança nas transações e proteger nossa plataforma.
-
-⚡ Produtos selecionados.
-📦 Entrega rápida.
-🤝 Suporte sempre que precisar.
-
-Escolha uma opção no menu abaixo e boas compras! 🚀`, {
+    await ctx.reply(`👋 Bem-vindo a Riley Store!\n\nEscolha uma opção no menu abaixo e boas compras! 🚀`, {
         reply_markup: menuPrincipal,
     });
 });
 
-// 📂 COMANDO: /bin <numero_da_bin>
 bot.command("bin", async (ctx) => {
     const binDigitada = ctx.match ? ctx.match.trim() : "";
-
-    if (!binDigitada) {
-        return ctx.reply("❌ Por favor, informe a BIN. Exemplo: `/bin 516292`", { parse_mode: "Markdown" });
-    }
-
+    if (!binDigitada) return ctx.reply("❌ Por favor, informe a BIN. Exemplo: `/bin 516292`", { parse_mode: "Markdown" });
     const produtosFiltrados = produtos.filter(p => p.bin === binDigitada);
-
-    if (produtosFiltrados.length === 0) {
-        return ctx.reply(`📭 Nenhuma frase encontrada vinculada à BIN *${binDigitada}*.`, { parse_mode: "Markdown" });
-    }
-
+    if (produtosFiltrados.length === 0) return ctx.reply(`📭 Nenhuma frase encontrada vinculada à BIN *${binDigitada}*.`, { parse_mode: "Markdown" });
     await exibirCarrosselBinFiltrado(ctx, binDigitada, 0, false);
 });
 
 // 👑 COMANDO EXCLUSIVO DO ADMIN: /addsaldo <id> <valor>
 bot.command("addsaldo", async (ctx) => {
     const userId = String(ctx.from.id);
-
-    if (userId !== ADMIN_ID) {
-        return ctx.reply("❌ Você não tem permissão para usar este comando.");
-    }
+    if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
 
     const argumentos = ctx.match ? ctx.match.trim().split(" ") : [];
-
-    if (argumentos.length < 2) {
-        return ctx.reply("❌ *Formato inválido!*\n\nUse assim: `/addsaldo <ID_DO_CLIENTE> <VALOR>`\nExemplo: `/addsaldo 123456789 10`", { parse_mode: "Markdown" });
-    }
+    if (argumentos.length < 2) return ctx.reply("❌ *Formato inválido!*\n\nUse assim: `/addsaldo <ID_DO_CLIENTE> <VALOR>`", { parse_mode: "Markdown" });
 
     const idCliente = argumentos[0].trim();
     const valorAdicionar = parseFloat(argumentos[1].replace(",", "."));
+    if (isNaN(valorAdicionar) || valorAdicionar <= 0) return ctx.reply("❌ *Valor inválido!* Digite um número maior que zero.");
 
-    if (isNaN(valorAdicionar) || valorAdicionar <= 0) {
-        return ctx.reply("❌ *Valor inválido!* Digite um número maior que zero.");
-    }
+    const saldoAtual = await obterSaldo(idCliente);
+    const novoSaldo = saldoAtual + valorAdicionar;
+    await atualizarSaldo(idCliente, novoSaldo); // Salva no banco
 
-    if (saldoUsuarios[idCliente] === undefined) {
-        saldoUsuarios[idCliente] = 0.0;
-    }
-    saldoUsuarios[idCliente] += valorAdicionar;
-
-    await ctx.reply(`✅ *Saldo adicionado com sucesso!*\n\n👤 *ID do Cliente:* \`${idCliente}\`\n💰 *Valor inserido:* R$ ${valorAdicionar.toFixed(2)}\n💳 *Saldo total atual:* R$ ${saldoUsuarios[idCliente].toFixed(2)}`, { parse_mode: "Markdown" });
+    await ctx.reply(`✅ *Saldo adicionado com sucesso!*\n\n👤 *ID do Cliente:* \`${idCliente}\`\n💰 *Valor inserido:* R$ ${valorAdicionar.toFixed(2)}\n💳 *Saldo total atual:* R$ ${novoSaldo.toFixed(2)}`, { parse_mode: "Markdown" });
 
     try {
-        await ctx.api.sendMessage(idCliente, `🎉 *Notificação de Depósito!*\n\nO administrador adicionou *R$ ${valorAdicionar.toFixed(2)}* à sua carteira.\n\n💰 Verifique o seu novo saldo no menu *Perfil / Carteira*!`, { parse_mode: "Markdown" });
-    } catch (error) {
-        console.log(`Não foi possível enviar mensagem direta ao cliente ${idCliente}`);
-    }
+        await ctx.api.sendMessage(idCliente, `🎉 *Notificação de Depósito!*\n\nO administrador adicionou *R$ ${valorAdicionar.toFixed(2)}* à sua carteira.`, { parse_mode: "Markdown" });
+    } catch (e){}
 });
 
 bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
@@ -200,28 +139,20 @@ async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem)
     }
 
     const produto = listaFiltrada[index];
-    const dataAtual = new Date();
-    const dataFormatada = dataAtual.toLocaleDateString("pt-BR") + " às " + dataAtual.toLocaleTimeString("pt-BR");
-    
     let textoBin = `🔎 *Mostrando ${index + 1} de ${total}*\n\n`;
 
     if (userId === ADMIN_ID) {
-        textoBin += `👑 *MODO ADMINISTRADOR (ACESSO LIBERADO)*\n\n${produto.completo}\n\n📆 *Consultado em:* ${dataFormatada}`;
+        textoBin += `👑 *MODO ADMINISTRADOR*\n\n${produto.completo}`;
     } else {
-        textoBin += `${produto.demonstracao}\n\n💸 *Valor:* ${produto.precoTexto}\n` +
-                    `📆 *Consultado em:* ${dataFormatada}`;
+        textoBin += `${produto.demonstracao}\n\n💸 *Valor:* ${produto.precoTexto}`;
     }
 
     const teclado = new InlineKeyboard();
-
     if (index > 0) teclado.text("⬅️ Ant", `bin_filtro_${binTarget}_${index - 1}`);
     if (index < total - 1) teclado.text("Próx ➡️", `bin_filtro_${binTarget}_${index + 1}`);
-
-    if (userId !== ADMIN_ID) {
-        teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
-    }
-    
+    if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
+
     if (editarMensagem) {
         await ctx.editMessageText(textoBin, { parse_mode: "Markdown", reply_markup: teclado });
     } else {
@@ -247,9 +178,9 @@ bot.callbackQuery(/^perfil_page_(\d+)$/, async (ctx) => {
 
 async function exibirPerfilComCompras(ctx, index) {
     const userId = ctx.from.id;
-    const listaDeCompras = obterCompras(userId);
+    const listaDeCompras = await obterCompras(userId); // Busca do banco
     const totalCompras = listaDeCompras.length;
-    const saldoAtual = obterSaldo(userId);
+    const saldoAtual = await obterSaldo(userId); // Busca do banco
     
     let textoPerfil = `👤 *Seu Perfil de Usuário*\n🆔 *ID:* \`${userId}\`\n💰 *Saldo em Conta:* R$ ${saldoAtual.toFixed(2)}\n\n--- \n🛍️ *Suas Compras:* `;
     const teclado = new InlineKeyboard();
@@ -283,7 +214,7 @@ async function enviarCarrossel(ctx, index) {
     const total = produtos.length;
 
     if (total === 0) {
-        return ctx.editMessageText("📭 A vitrine está vazia no momento! Volte mais tarde.", {
+        return ctx.editMessageText("📭 A vitrine está vazia no momento!", {
             reply_markup: new InlineKeyboard().text("⬅️ Voltar ao Menu", "menu_principal")
         });
     }
@@ -293,7 +224,7 @@ async function enviarCarrossel(ctx, index) {
 
     let textoProduto = `📚 *Vitrine de Frases* (${indexAtual + 1}/${total})\n\n`;
     if (userId === ADMIN_ID) {
-        textoProduto += `👑 *MODO ADMINISTRADOR (ACESSO LIBERADO)*\n\n${produto.completo}`;
+        textoProduto += `👑 *MODO ADMINISTRADOR*\n\n${produto.completo}`;
     } else {
         textoProduto += `${produto.demonstracao}\n\n💰 *Preço:* ${produto.precoTexto}`;
     }
@@ -301,9 +232,7 @@ async function enviarCarrossel(ctx, index) {
     const teclado = new InlineKeyboard();
     if (indexAtual > 0) teclado.text("⬅️ Ant", `comprar_page_${indexAtual - 1}`);
     if (indexAtual < total - 1) teclado.text("Próx ➡️", `comprar_page_${indexAtual + 1}`);
-    if (userId !== ADMIN_ID) {
-        teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
-    }
+    if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
 
     await ctx.editMessageText(textoProduto, { parse_mode: "Markdown", reply_markup: teclado });
@@ -317,41 +246,32 @@ function fazerRequisicao(url, options, bodyData = null) {
             res.on("end", () => resolve(JSON.parse(data)));
         });
         req.on("error", (err) => reject(err));
-    
         if (bodyData) req.write(JSON.stringify(bodyData));
         req.end();
     });
 }
 
-// 🛒 LOGICA DE COMPRA CORRIGIDA (VERIFICA O SALDO ANTES DE IR PRO PIX)
 bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     const userId = ctx.from.id;
     const produtoId = parseInt(ctx.match[1]);
     const produtoIndex = produtos.findIndex(p => p.id === produtoId);
 
-    if (produtoIndex === -1) {
-        return ctx.reply("❌ Desculpe, este produto acabou de ser vendido para outro usuário!");
-    }
+    if (produtoIndex === -1) return ctx.reply("❌ Desculpe, este produto acabou de ser vendido!");
 
     const produto = produtos[produtoIndex];
-    const saldoAtual = obterSaldo(userId);
+    const saldoAtual = await obterSaldo(userId);
 
-    // ✨ CORREÇÃO AQUI: Se o usuário tiver saldo, compra direto da carteira!
+    // Compra Direta com Saldo salvo no Banco
     if (saldoAtual >= produto.preco) {
-        saldoUsuarios[userId] -= produto.preco; // Desconta da carteira
+        await atualizarSaldo(userId, saldoAtual - produto.preco); // Atualiza no banco
+        await salvarCompra(userId, produto); // Grava histórico permanente
 
-        // Remove do estoque
         produtos.splice(produtoIndex, 1);
 
-        // Adiciona ao histórico do perfil
-        const comprasUser = obterCompras(userId);
-        comprasUser.push({ id: produto.id, nome: produto.nome, completo: produto.completo });
-
-        await ctx.editMessageText(`🎉 *COMPRA APROVADA VIA CARTEIRA!*\n_R$ ${produto.preco.toFixed(2)} debitados do seu saldo em conta._\n\n${produto.completo}`, { parse_mode: "Markdown" });
+        await ctx.editMessageText(`🎉 *COMPRA APROVADA VIA CARTEIRA!*\n\n${produto.completo}`, { parse_mode: "Markdown" });
         return ctx.answerCallbackQuery();
     }
 
-    // Se NÃO tiver saldo suficiente na carteira, segue o fluxo normal de gerar um Pix
     await ctx.editMessageText("⏳ Gerando seu código Pix copia e cola, aguarde um instante...");
 
     try {
@@ -378,7 +298,6 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
         if (!pixCopiaCola) throw new Error("Erro Mercado Pago");
         await ctx.reply(`✅ *PIX Gerado!*\n\n💵 *Valor:* ${produto.precoTexto}\n\n👇 Copie o código Pix abaixo:`, { parse_mode: "Markdown" });
         await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
-        await ctx.reply("🔄 Monitorando seu pagamento...");
 
         let tentativas = 0;
         const checarPagamento = setInterval(async () => {
@@ -393,34 +312,24 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                     clearInterval(checarPagamento);
                     
                     const indexFinal = produtos.findIndex(p => p.id === produto.id);
-                    if (indexFinal !== -1) {
-                        produtos.splice(indexFinal, 1);
-                    }
+                    if (indexFinal !== -1) produtos.splice(indexFinal, 1);
 
-                    const comprasUser = obterCompras(userId);
-                    comprasUser.push({ id: produto.id, nome: produto.nome, completo: produto.completo });
+                    await salvarCompra(userId, produto); // Grava permanente
 
                     await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n${produto.completo}`, { parse_mode: "Markdown" });
                 }
-            } catch (err) {
-                console.log("Erro ao checar: ", err);
-            }
+            } catch (err) {}
             if (tentativas >= 60) clearInterval(checarPagamento);
         }, 10000);
 
     } catch (error) {
-        console.error(error);
         await ctx.reply("❌ Erro ao processar o seu Pix.");
     }
 });
 
-// =================================================================
-// 💰 SISTEMA DE ADICIONAR SALDO (AUTO VIA MERCADO PAGO)
-// =================================================================
-
 bot.callbackQuery("menu_saldo", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("💵 *Digite o valor que deseja adicionar em saldo:*\n\nExemplo: `10` ou `25.50` \n_(Valor mínimo: R$ 5,00)_", {
+    await ctx.reply("💵 *Digite o valor que deseja adicionar em saldo:*\n\n_(Valor mínimo: R$ 5,00)_", {
         reply_markup: { force_reply: true }
     });
 });
@@ -431,12 +340,9 @@ bot.on("message", async (ctx) => {
 
     if (reply.text.includes("Digite o valor que deseja adicionar")) {
         const valorDigitado = parseFloat(ctx.message.text.replace(",", "."));
+        if (isNaN(valorDigitado) || valorDigitado < 5) return ctx.reply("❌ *Valor inválido!*");
 
-        if (isNaN(valorDigitado) || valorDigitado < 5) {
-            return ctx.reply("❌ *Valor inválido!* O valor mínimo é de R$ 5,00.");
-        }
-
-        const msgAviso = await ctx.reply("⏳ _Gerando seu Pix de Saldo... Aguarde._");
+        const msgAviso = await ctx.reply("⏳ _Gerando seu Pix de Saldo..._");
 
         try {
             const url = "https://api.mercadopago.com/v1/payments";
@@ -448,7 +354,6 @@ bot.on("message", async (ctx) => {
                     "X-Idempotency-Key": `${Date.now()}-${ctx.from.id}`
                 }
             };
-
             const body = {
                 transaction_amount: valorDigitado,
                 description: `Adicionar Saldo - User: ${ctx.from.id}`,
@@ -458,14 +363,12 @@ bot.on("message", async (ctx) => {
 
             const data = await fazerRequisicao(url, options, body);
             const pixCopiaCola = data.point_of_interaction?.transaction_data?.qr_code;
-
             if (!pixCopiaCola) throw new Error("Erro Mercado Pago");
 
             try { await ctx.api.deleteMessage(ctx.chat.id, msgAviso.message_id); } catch(e){}
 
-            await ctx.reply(`✅ *PIX de Saldo Gerado!*\n\n💵 *Valor:* R$ ${valorDigitado.toFixed(2)}\n\n👇 Copie o código abaixo:`);
+            await ctx.reply(`✅ *PIX de Saldo Gerado!* Valor: R$ ${valorDigitado.toFixed(2)}`);
             await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
-            await ctx.reply("🔄 Monitorando seu pagamento... Seu saldo subirá assim que pagar.");
 
             let tentativesSaldo = 0;
             const checarSaldo = setInterval(async () => {
@@ -478,25 +381,17 @@ bot.on("message", async (ctx) => {
 
                     if (statusData.status === "approved") {
                         clearInterval(checarSaldo);
-                        
-                        if (saldoUsuarios[ctx.from.id] === undefined) {
-                            saldoUsuarios[ctx.from.id] = 0.0;
-                        }
-                        saldoUsuarios[ctx.from.id] += valorDigitado;
+                        const saldoAtual = await obterSaldo(ctx.from.id);
+                        await atualizarSaldo(ctx.from.id, saldoAtual + valorDigitado); // Guarda de forma persistente
 
-                        await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n💰 R$ ${valorDigitado.toFixed(2)} foram adicionados ao seu saldo com sucesso!`);
+                        await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!* R$ ${valorDigitado.toFixed(2)} adicionados.`);
                     }
-                } catch (err) {
-                    console.log("Erro ao checar saldo: ", err);
-                }
-
+                } catch (err) {}
                 if (tentativesSaldo >= 60) clearInterval(checarSaldo);
             }, 10000);
 
         } catch (error) {
-            console.error(error);
-            try { await ctx.api.deleteMessage(ctx.chat.id, msgAviso.message_id); } catch(e){}
-            await ctx.reply("❌ Erro ao gerar o Pix. Tente novamente.");
+            await ctx.reply("❌ Erro ao gerar o Pix.");
         }
     }
 });
