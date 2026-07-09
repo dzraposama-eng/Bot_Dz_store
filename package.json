@@ -1,7 +1,7 @@
 {
-  "name": "meu-bot-telegram",
+  "name": "bot-dz-store",
   "version": "1.0.0",
-  "main": "Bot.js",
+  "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
   },
@@ -9,4 +9,3 @@
     "grammy": "^1.21.1"
   }
 }
-
