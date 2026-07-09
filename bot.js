@@ -149,15 +149,12 @@ bot.command("bin", async (ctx) => {
 bot.command("addsaldo", async (ctx) => {
     const userId = String(ctx.from.id);
 
-    // 1. Bloqueia se não for o administrador real do bot
     if (userId !== ADMIN_ID) {
         return ctx.reply("❌ Você não tem permissão para usar este comando.");
     }
 
-    // 2. Captura o texto que foi digitado após o comando
     const argumentos = ctx.match ? ctx.match.trim().split(" ") : [];
 
-    // Verifica se enviou o ID e o Valor corretamente
     if (argumentos.length < 2) {
         return ctx.reply("❌ *Formato inválido!*\n\nUse assim: `/addsaldo <ID_DO_CLIENTE> <VALOR>`\nExemplo: `/addsaldo 123456789 10`", { parse_mode: "Markdown" });
     }
@@ -165,25 +162,21 @@ bot.command("addsaldo", async (ctx) => {
     const idCliente = argumentos[0].trim();
     const valorAdicionar = parseFloat(argumentos[1].replace(",", "."));
 
-    // Valida se o valor digitado é um número real e positivo
     if (isNaN(valorAdicionar) || valorAdicionar <= 0) {
         return ctx.reply("❌ *Valor inválido!* Digite um número maior que zero.");
     }
 
-    // 3. Atualiza o saldo do cliente na memória (Carteira)
     if (saldoUsuarios[idCliente] === undefined) {
         saldoUsuarios[idCliente] = 0.0;
     }
     saldoUsuarios[idCliente] += valorAdicionar;
 
-    // 4. Confirmação para o administrador
     await ctx.reply(`✅ *Saldo adicionado com sucesso!*\n\n👤 *ID do Cliente:* \`${idCliente}\`\n💰 *Valor inserido:* R$ ${valorAdicionar.toFixed(2)}\n💳 *Saldo total atual:* R$ ${saldoUsuarios[idCliente].toFixed(2)}`, { parse_mode: "Markdown" });
 
-    // 5. Envia uma notificação automática para o cliente avisando que o saldo caiu
     try {
         await ctx.api.sendMessage(idCliente, `🎉 *Notificação de Depósito!*\n\nO administrador adicionou *R$ ${valorAdicionar.toFixed(2)}* à sua carteira.\n\n💰 Verifique o seu novo saldo no menu *Perfil / Carteira*!`, { parse_mode: "Markdown" });
     } catch (error) {
-        console.log(`Não foi possível enviar mensagem direta ao cliente ${idCliente}, mas o saldo foi atualizado.`);
+        console.log(`Não foi possível enviar mensagem direta ao cliente ${idCliente}`);
     }
 });
 
@@ -221,12 +214,8 @@ async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem)
 
     const teclado = new InlineKeyboard();
 
-    if (index > 0) {
-        teclado.text("⬅️ Ant", `bin_filtro_${binTarget}_${index - 1}`);
-    }
-    if (index < total - 1) {
-        teclado.text("Próx ➡️", `bin_filtro_${binTarget}_${index + 1}`);
-    }
+    if (index > 0) teclado.text("⬅️ Ant", `bin_filtro_${binTarget}_${index - 1}`);
+    if (index < total - 1) teclado.text("Próx ➡️", `bin_filtro_${binTarget}_${index + 1}`);
 
     if (userId !== ADMIN_ID) {
         teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
@@ -245,7 +234,6 @@ bot.callbackQuery("menu_principal", async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-// 👤 MENU PERFIL ATUALIZADO COM CARTEIRA DE SALDO INCLUÍDA
 bot.callbackQuery("menu_perfil", async (ctx) => {
     await exibirPerfilComCompras(ctx, 0);
     await ctx.answerCallbackQuery();
@@ -270,7 +258,7 @@ async function exibirPerfilComCompras(ctx, index) {
         textoPerfil += `_Você ainda não comprou nenhuma frase._`;
     } else {
         const item = listaDeCompras[index];
-        textoPerfil += `聚 (${index + 1}/${totalCompras})\n\n📦 *${item.nome}*\n\n${item.completo}`;
+        textoPerfil += `(${index + 1}/${totalCompras})\n\n📦 *${item.nome}*\n\n${item.completo}`;
         if (index > 0) teclado.text("⬅️ Ant", `perfil_page_${index - 1}`);
         if (index < totalCompras - 1) teclado.text("Próx ➡️", `perfil_page_${index + 1}`);
     }
@@ -335,7 +323,9 @@ function fazerRequisicao(url, options, bodyData = null) {
     });
 }
 
+// 🛒 LOGICA DE COMPRA CORRIGIDA (VERIFICA O SALDO ANTES DE IR PRO PIX)
 bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
+    const userId = ctx.from.id;
     const produtoId = parseInt(ctx.match[1]);
     const produtoIndex = produtos.findIndex(p => p.id === produtoId);
 
@@ -344,7 +334,24 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     }
 
     const produto = produtos[produtoIndex];
+    const saldoAtual = obterSaldo(userId);
 
+    // ✨ CORREÇÃO AQUI: Se o usuário tiver saldo, compra direto da carteira!
+    if (saldoAtual >= produto.preco) {
+        saldoUsuarios[userId] -= produto.preco; // Desconta da carteira
+
+        // Remove do estoque
+        produtos.splice(produtoIndex, 1);
+
+        // Adiciona ao histórico do perfil
+        const comprasUser = obterCompras(userId);
+        comprasUser.push({ id: produto.id, nome: produto.nome, completo: produto.completo });
+
+        await ctx.editMessageText(`🎉 *COMPRA APROVADA VIA CARTEIRA!*\n_R$ ${produto.preco.toFixed(2)} debitados do seu saldo em conta._\n\n${produto.completo}`, { parse_mode: "Markdown" });
+        return ctx.answerCallbackQuery();
+    }
+
+    // Se NÃO tiver saldo suficiente na carteira, segue o fluxo normal de gerar um Pix
     await ctx.editMessageText("⏳ Gerando seu código Pix copia e cola, aguarde um instante...");
 
     try {
@@ -390,7 +397,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                         produtos.splice(indexFinal, 1);
                     }
 
-                    const comprasUser = obterCompras(ctx.from.id);
+                    const comprasUser = obterCompras(userId);
                     comprasUser.push({ id: produto.id, nome: produto.nome, completo: produto.completo });
 
                     await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n${produto.completo}`, { parse_mode: "Markdown" });
@@ -494,9 +501,5 @@ bot.on("message", async (ctx) => {
     }
 });
 
-// =================================================================
-// 🚀 INICIALIZAÇÃO FINAL DO BOT
-// =================================================================
 bot.start();
-console.log("🤖 Bot Atualizado com Comando /addsaldo!");
 
