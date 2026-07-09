@@ -350,10 +350,13 @@ bot.callbackQuery("menu_saldo", async (ctx) => {
 });
 
 // 2. Processa o valor digitado e gera o Pix de Saldo
-bot.on("message:reply_to_message", async (ctx) => {
-    const textoOriginal = ctx.message.reply_to_message.text;
-    
-    if (textoOriginal && textoOriginal.includes("Digite o valor que deseja adicionar")) {
+bot.on("message", async (ctx) => {
+    // Verifica se a mensagem atual é uma resposta a outra mensagem
+    const reply = ctx.message.reply_to_message;
+    if (!reply || !reply.text) return; // Se não for uma resposta, ignora
+
+    // Verifica se a mensagem que o bot enviou antes era o pedido de saldo
+    if (reply.text.includes("Digite o valor que deseja adicionar")) {
         const valorDigitado = parseFloat(ctx.message.text.replace(",", "."));
 
         if (isNaN(valorDigitado) || valorDigitado < 5) {
@@ -367,7 +370,7 @@ bot.on("message:reply_to_message", async (ctx) => {
             const options = {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${process.env.MP_TOKEN}`,
+                    "Authorization": `Bearer ${process.env.MP_TOKEN}`, // Usa o seu token já configurado
                     "Content-Type": "application/json",
                     "X-Idempotency-Key": `${Date.now()}-${ctx.from.id}`
                 }
@@ -380,6 +383,7 @@ bot.on("message:reply_to_message", async (ctx) => {
                 payer: { email: "comprador_telegram@email.com" }
             };
 
+            // Usa a sua função nativa fazerRequisicao
             const data = await fazerRequisicao(url, options, body);
             const pixCopiaCola = data.point_of_interaction?.transaction_data?.qr_code;
 
@@ -391,6 +395,7 @@ bot.on("message:reply_to_message", async (ctx) => {
             await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
             await ctx.reply("🔄 Monitorando seu pagamento... Seu saldo subirá assim que pagar.");
 
+            // Sistema de checagem automática
             let tentativas = 0;
             const checarSaldo = setInterval(async () => {
                 tentativas++;
@@ -413,13 +418,9 @@ bot.on("message:reply_to_message", async (ctx) => {
 
         } catch (error) {
             console.error(error);
+            try { await ctx.api.deleteMessage(ctx.chat.id, msgAviso.message_id); } catch(e){}
             await ctx.reply("❌ Erro ao gerar o Pix. Tente novamente.");
         }
     }
 });
 
-// =================================================================
-// 🚀 INICIALIZAÇÃO FINAL DO BOT
-// =================================================================
-bot.start();
-console.log("🤖 Bot Atualizado com Painel Admin Liberado!");
