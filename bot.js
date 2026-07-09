@@ -16,7 +16,6 @@ const bot = new Bot(process.env.TELEGRAM_TOKEN);
 // Banco de dados em memória para salvar as compras de cada usuário
 const comprasUsuarios = {};
 
-// Função auxiliar para garantir que a lista de compras do usuário exista
 function obterCompras(userId) {
     if (!comprasUsuarios[userId]) {
         comprasUsuarios[userId] = [];
@@ -24,7 +23,14 @@ function obterCompras(userId) {
     return comprasUsuarios[userId];
 }
 
-// Vitrine de Produtos (Frases)
+// 📚 LISTA DE FRASES DO COMANDO /BIN (Você pode mudar ou adicionar mais aqui!)
+const frasesBin = [
+    { id: 1, texto: "💡 'A mente que se abre a uma nova ideia jamais voltará ao seu tamanho original.' - Albert Einstein" },
+    { id: 2, texto: "🚀 'Comece onde você está. Use o que você tem. Faça o que você pode.' - Arthur Ashe" },
+    { id: 3, texto: "💎 'A persistência é o caminho do êxito.' - Charles Chaplin" }
+];
+
+// Vitrine de Produtos (Frases Pagas)
 const produtos = [
     { 
         id: 1, 
@@ -55,25 +61,59 @@ bot.command("start", async (ctx) => {
     });
 });
 
+// 📂 NOVO COMANDO: /bin (Inicia na primeira frase, índice 0)
+bot.command("bin", async (ctx) => {
+    await exibirCarrosselBin(ctx, 0, false);
+});
+
+// Trata a paginação dos botões do comando /bin
+bot.callbackQuery(/^bin_page_(\d+)$/, async (ctx) => {
+    const pagina = parseInt(ctx.match[1]);
+    await exibirCarrosselBin(ctx, pagina, true);
+    await ctx.answerCallbackQuery();
+});
+
+// Função para renderizar o carrossel do /bin
+async function exibirCarrosselBin(ctx, index, editarMensagem) {
+    const total = frasesBin.length;
+    const frase = frasesBin[index];
+
+    const textoBin = `📂 *Frases Cadastradas no /bin* (${index + 1}/${total})\n\n` +
+                      `${frase.texto}`;
+
+    const teclado = new InlineKeyboard();
+
+    if (index > 0) {
+        teclado.text("⬅️ Ant", `bin_page_${index - 1}`);
+    }
+    if (index < total - 1) {
+        teclado.text("Próx ➡️", `bin_page_${index + 1}`);
+    }
+
+    // Se veio de um clique de botão, edita a mensagem. Se veio do comando digitado, envia uma nova.
+    if (editarMensagem) {
+        await ctx.editMessageText(textoBin, { parse_mode: "Markdown", reply_markup: teclado });
+    } else {
+        await ctx.reply(textoBin, { parse_mode: "Markdown", reply_markup: teclado });
+    }
+}
+
 bot.callbackQuery("menu_principal", async (ctx) => {
     await ctx.editMessageText("Escolha uma opção no menu abaixo:", { reply_markup: menuPrincipal });
     await ctx.answerCallbackQuery();
 });
 
-// Opção Perfil: Mostra o ID e inicia o carrossel das compras na página 0
 bot.callbackQuery("menu_perfil", async (ctx) => {
     await exibirPerfilComCompras(ctx, 0);
     await ctx.answerCallbackQuery();
 });
 
-// Trata a paginação do Histórico de Compras do Perfil
 bot.callbackQuery(/^perfil_page_(\d+)$/, async (ctx) => {
     const pagina = parseInt(ctx.match[1]);
     await exibirPerfilComCompras(ctx, pagina);
     await ctx.answerCallbackQuery();
 });
 
-// Função para renderizar o Perfil com o Carrossel de Compras
 async function exibirPerfilComCompras(ctx, index) {
     const userId = ctx.from.id;
     const listaDeCompras = obterCompras(userId);
@@ -94,24 +134,15 @@ async function exibirPerfilComCompras(ctx, index) {
                        `📦 *${item.nome}*\n` +
                        `🔓 *Conteúdo:* _${item.completo}_`;
 
-        // Botões de navegação do Histórico
-        if (index > 0) {
-            teclado.text("⬅️ Ant", `perfil_page_${index - 1}`);
-        }
-        if (index < totalCompras - 1) {
-            teclado.text("Próx ➡️", `perfil_page_${index + 1}`);
-        }
+        if (index > 0) teclado.text("⬅️ Ant", `perfil_page_${index - 1}`);
+        if (index < totalCompras - 1) teclado.text("Próx ➡️", `perfil_page_${index + 1}`);
     }
 
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
 
-    await ctx.editMessageText(textoPerfil, {
-        parse_mode: "Markdown",
-        reply_markup: teclado,
-    });
+    await ctx.editMessageText(textoPerfil, { parse_mode: "Markdown", reply_markup: teclado });
 }
 
-// Opção: Comprar (Inicia no índice 0)
 bot.callbackQuery("menu_comprar", async (ctx) => {
     await enviarCarrossel(ctx, 0);
     await ctx.answerCallbackQuery();
@@ -139,7 +170,6 @@ async function enviarCarrossel(ctx, index) {
     await ctx.editMessageText(textoProduto, { parse_mode: "Markdown", reply_markup: teclado });
 }
 
-// Função auxiliar para requisições HTTPS
 function fazerRequisicao(url, options, bodyData = null) {
     return new Promise((resolve, reject) => {
         const req = https.request(url, options, (res) => {
@@ -153,7 +183,6 @@ function fazerRequisicao(url, options, bodyData = null) {
     });
 }
 
-// Geração do Pix e validação automatizada
 bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     const produtoId = parseInt(ctx.match[1]);
     const produto = produtos.find(p => p.id === produtoId);
@@ -201,7 +230,6 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                 if (statusData.status === "approved") {
                     clearInterval(checarPagamento);
                     
-                    // SALVA A COMPRA EXCLUSIVAMENTE NO PERFIL DO USUÁRIO
                     const comprasUser = obterCompras(ctx.from.id);
                     if (!comprasUser.some(c => c.id === produto.id)) {
                         comprasUser.push({ id: produto.id, nome: produto.nome, completo: produto.completo });
@@ -222,4 +250,5 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 });
 
 bot.start();
-console.log("🤖 Bot com Perfil Compacto e Navegável Iniciado!");
+console.log("🤖 Bot com comando /bin ativo rodando!");
+
