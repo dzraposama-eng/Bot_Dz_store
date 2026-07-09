@@ -40,7 +40,15 @@ const produtos = [
         precoTexto: "R$ 4,90",
         demonstracao: "🌱 'A vida é igual a andar de bicicleta. Para manter o equilíbrio...'", 
         completo: "🌱 'A vida é igual a andar de bicicleta. Para manter o equilíbrio, você tem que se manter em movimento.' - Albert Einstein"
-    }
+    }, // <-- NÃO ESQUEÇA DESTA VÍRGULA
+    { 
+        id: 3, 
+        nome: "Sua Nova Frase Aqui 03", 
+        preco: 3.50, 
+        precoTexto: "R$ 3,50",
+        demonstracao: "🚀 'O único lugar onde o sucesso vem antes do trabalho...'", 
+        completo: "🚀 'O único lugar onde o sucesso vem antes do trabalho é no dicionário.' - Albert Einstein"
+    } // <-- A última frase da lista não leva vírgula depois da chave
 ];
 
 // Menu Principal
