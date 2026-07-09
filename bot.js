@@ -1,4 +1,15 @@
 const { Bot, InlineKeyboard } = require("grammy");
+const http = require("http");
+
+// Correção para a Render não desligar o bot (Cria um servidor falso)
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("Bot Online!");
+});
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Servidor de monitoramento rodando na porta ${PORT}`);
+});
 
 // Inicializa o bot com o token guardado na Render
 const bot = new Bot(process.env.TELEGRAM_TOKEN);
@@ -68,7 +79,7 @@ bot.callbackQuery("menu_perfil", async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-// Opção: Histórico de Compras (Tela Informativa)
+// Opção: Histórico de Compras
 bot.callbackQuery("menu_historico", async (ctx) => {
     const textoHistorico = `📊 *Seu Histórico de Compras:*\n\n` +
                            `📭 _Você ainda não realizou nenhuma compra no momento._\n\n` +
@@ -89,14 +100,14 @@ bot.callbackQuery("menu_comprar", async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-// Trata a paginação dos produtos (Próximo e Anterior)
+// Trata a paginação dos produtos
 bot.callbackQuery(/^comprar_page_(\d+)$/, async (ctx) => {
     const pagina = parseInt(ctx.match[1]);
     await enviarCarrossel(ctx, pagina);
     await ctx.answerCallbackQuery();
 });
 
-// Função auxiliar para renderizar o carrossel de produtos com Spoilers
+// Função para renderizar o carrossel
 async function enviarCarrossel(ctx, index) {
     const produto = produtos[index];
     const total = produtos.length;
@@ -108,7 +119,6 @@ async function enviarCarrossel(ctx, index) {
 
     const teclado = new InlineKeyboard();
 
-    // Botões de navegação
     if (index > 0) {
         teclado.text("⬅️ Ant", `comprar_page_${index - 1}`);
     }
@@ -212,4 +222,5 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 
 // Inicialização do Bot
 bot.start();
-console.log("🤖 Bot Atualizado com Perfil e Pix Iniciado!");
+console.log("🤖 Bot Atualizado com Suporte a Porta Iniciado!");
+
