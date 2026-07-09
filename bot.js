@@ -48,7 +48,7 @@ const produtos = [
 👤Nome: vanessa g almeida
 🪪 cpf: 25845634873`, 
         completo: `✨Detalhes do cartão (LIBERADO)
-💳 Número: 516292000055267
+💳 cartão: 516292000055267
 📆 Validade: 07/2033
 🔐 cvv: 363
 
@@ -80,7 +80,7 @@ const produtos = [
 👤Nome: marcos g almeida
 🪪 cpf: 25845634873`, 
         completo: `✨Detalhes do cartão (LIBERADO)
-💳 Número: 516292000055267
+💳 cartão: 516292000055267
 📆 Validade: 07/2033
 🔐 cvv: 500
 
@@ -97,8 +97,8 @@ const produtos = [
 
 // Menu Principal
 const menuPrincipal = new InlineKeyboard()
-    .text("🛒 Comprar Frases", "menu_comprar")
-    .text("👤 Meu Perfil", "menu_perfil")
+    .text("🛒 Comprar", "menu_comprar")
+    .text("👤 Perfil", "menu_perfil")
     .row() // Quebra a linha
     .text("💰 Adicionar Saldo", "menu_saldo") // <--- ADICIONE ESTA LINHA
     .url("🆘 Suporte (WhatsApp)", "https://wa.me/5500999999999"); 
