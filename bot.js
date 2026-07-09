@@ -23,6 +23,9 @@ function obterCompras(userId) {
     return comprasUsuarios[userId];
 }
 
+// 👑 COLOQUE O SEU ID DO TELEGRAM AQUI ENTRE AS ASPAS:
+const ADMIN_ID = "8827427559"; 
+
 // 📦 VITRINE DE PRODUTOS LINKADOS COM BINS ESPECÍFICAS
 const produtos = [
     { 
@@ -32,7 +35,7 @@ const produtos = [
         preco: 28.00, 
         precoTexto: "R$ 28,00",
         demonstracao: `✨Detalhes do cartão
-💳 frase : 516292*********
+💳 cartão: 516292*********
 📆 Validade: 07/2033
 🔐 Cod: ***
 
@@ -45,9 +48,9 @@ const produtos = [
 👤Nome: vanessa g almeida
 🪪 cpf: 25845634873`, 
         completo: `✨Detalhes do cartão (LIBERADO)
-💳 Número: 5162920000000000
+💳 Número: 516292000055267
 📆 Validade: 07/2033
-🔐 Cod: 999
+🔐 cvv: 363
 
 🏳️ Bandeira: mastercard
 💠 Nível: nubank platinum
@@ -106,6 +109,7 @@ bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
 });
 
 async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem) {
+    const userId = String(ctx.from.id);
     const listaFiltrada = produtos.filter(p => p.bin === binTarget);
     const total = listaFiltrada.length;
     const produto = listaFiltrada[index];
@@ -113,10 +117,15 @@ async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem)
     const dataAtual = new Date();
     const dataFormatada = dataAtual.toLocaleDateString("pt-BR") + " às " + dataAtual.toLocaleTimeString("pt-BR");
 
-    const textoBin = `🔎 *Mostrando ${index + 1} de ${total}*\n\n` +
-                      `${produto.demonstracao}\n\n` +
-                      `💸 *Valor:* ${produto.precoTexto}\n` +
-                      `📆 *Consultado em:* ${dataFormatada}`;
+    let textoBin = `🔎 *Mostrando ${index + 1} de ${total}*\n\n`;
+    
+    // 👑 SE FOR O ADMIN, JÁ MOSTRA O CONTEÚDO COMPLETO DE GRAÇA!
+    if (userId === ADMIN_ID) {
+        textoBin += `👑 *MODO ADMINISTRADOR (ACESSO LIBERADO)*\n\n${produto.completo}\n\n📆 *Consultado em:* ${dataFormatada}`;
+    } else {
+        textoBin += `${produto.demonstracao}\n\n💸 *Valor:* ${produto.precoTexto}\n` +
+                    `📆 *Consultado em:* ${dataFormatada}`;
+    }
 
     const teclado = new InlineKeyboard();
 
@@ -127,7 +136,11 @@ async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem)
         teclado.text("Próx ➡️", `bin_filtro_${binTarget}_${index + 1}`);
     }
 
-    teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
+    // Só adiciona o botão de comprar se NÃO for o administrador
+    if (userId !== ADMIN_ID) {
+        teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
+    }
+    
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
 
     if (editarMensagem) {
@@ -194,16 +207,26 @@ bot.callbackQuery(/^comprar_page_(\d+)$/, async (ctx) => {
 });
 
 async function enviarCarrossel(ctx, index) {
+    const userId = String(ctx.from.id);
     const produto = produtos[index];
     const total = produtos.length;
 
-    const textoProduto = `📚 *Vitrine de Frases* (${index + 1}/${total})\n\n${produto.demonstracao}\n\n💰 *Preço:* ${produto.precoTexto}`;
+    let textoProduto = `📚 *Vitrine de Frases* (${index + 1}/${total})\n\n`;
+    
+    if (userId === ADMIN_ID) {
+        textoProduto += `👑 *MODO ADMINISTRADOR (ACESSO LIBERADO)*\n\n${produto.completo}`;
+    } else {
+        textoProduto += `${produto.demonstracao}\n\n💰 *Preço:* ${produto.precoTexto}`;
+    }
+    
     const teclado = new InlineKeyboard();
 
     if (index > 0) teclado.text("⬅️ Ant", `comprar_page_${index - 1}`);
     if (index < total - 1) teclado.text("Próx ➡️", `comprar_page_${index + 1}`);
 
-    teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
+    if (userId !== ADMIN_ID) {
+        teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
+    }
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
 
     await ctx.editMessageText(textoProduto, { parse_mode: "Markdown", reply_markup: teclado });
@@ -289,5 +312,6 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 });
 
 bot.start();
-console.log("🤖 Bot Atualizado com Novo Produto de Exemplo!");
+console.log("🤖 Bot Atualizado com Painel Admin Liberado!");
+
 
