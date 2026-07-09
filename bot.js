@@ -23,42 +23,31 @@ const produtos = [
     }
 ];
 
-// Menu Principal
-const menuPrincipal = new InlineKeyboard()
-    .text("🛒 Comprar Frases", "menu_comprar")
-    .text("👤 Meu Perfil", "menu_perfil");
-
-// Comando /start
-bot.command("start", async (ctx) => {
-    await ctx.reply("Olá! Seja bem-vindo ao bot de Frases Exclusivas. Escolha uma opção abaixo:", {
-        reply_markup: menuPrincipal,
-    });
-});
-
-// Voltar para o Menu Principal
-bot.callbackQuery("menu_principal", async (ctx) => {
-    await ctx.editMessageText("Escolha uma opção no menu abaixo:", {
-        reply_markup: menuPrincipal,
-    });
-    await ctx.answerCallbackQuery();
-});
-
-// Opção: Perfil
+// Opção: Perfil Aprimorado
 bot.callbackQuery("menu_perfil", async (ctx) => {
     const userId = ctx.from.id;
-    const username = ctx.from.username ? `@${ctx.from.username}` : "Não definido";
     const nome = ctx.from.first_name;
+    
+    // Simulação de dados (Em um bot profissional, isso viria de um banco de dados como MongoDB ou Firebase)
+    const totalCompras = 0; // Aqui você buscaria no seu banco de dados
+    const dataCadastro = "09/07/2026"; 
 
-    const textoPerfil = `👤 *Seu Perfil:*\n\n` +
-                        `🆔 *ID Único:* \`${userId}\`\n` +
-                        `✏️ *Nome:* ${nome}\n` +
-                        `📱 *Usuário:* ${username}`;
+    const textoPerfil = `👤 *Seu Perfil Premium:*\n\n` +
+                        `✨ *Nome:* ${nome}\n` +
+                        `🆔 *ID:* \`${userId}\`\n` +
+                        `🛍️ *Total de Frases Compradas:* ${totalCompras}\n` +
+                        `📅 *Membro desde:* ${dataCadastro}\n\n` +
+                        `--- \n` +
+                        `💡 _Dica: Quanto mais frases você compra, mais descontos ganha!_`;
 
-    const botaoVoltar = new InlineKeyboard().text("⬅️ Voltar", "menu_principal");
+    const tecladoPerfil = new InlineKeyboard()
+        .text("⬅️ Voltar", "menu_principal")
+        .row()
+        .text("📊 Ver Histórico de Compras", "menu_historico"); // Nova opção que podemos criar
 
     await ctx.editMessageText(textoPerfil, {
         parse_mode: "Markdown",
-        reply_markup: botaoVoltar,
+        reply_markup: tecladoPerfil,
     });
     await ctx.answerCallbackQuery();
 });
