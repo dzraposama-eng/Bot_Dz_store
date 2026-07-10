@@ -1,4 +1,12 @@
-git add package.json package-lock.json
-git commit -m "Adicionando grammy"
-git push origin main
-
+{
+  "name": "bot-dz-store",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "grammy": "^1.21.1"
+  }
+}
