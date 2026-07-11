@@ -54,7 +54,7 @@ async function salvarCompra(userId, produto) {
 // 👑 ID DO TELEGRAM DO ADMINISTRADOR:
 const ADMIN_ID = "8827427559"; 
 
-// 📦 VITRINE DE PRODUTOS (IDs corrigidos e strings ajustadas)
+// 📦 VITRINE DE PRODUTOS
 let produtos = [
     { 
         id: 1, 
@@ -135,6 +135,25 @@ bot.command("addsaldo", async (ctx) => {
     } catch (e){}
 });
 
+// 💰 COMANDO DIRETO: /pix ou /pix <valor>
+bot.command("pix", async (ctx) => {
+    const argumento = ctx.match ? ctx.match.trim() : "";
+
+    // Se o usuário digitou o valor direto (ex: /pix 10)
+    if (argumento) {
+        const valorDigitado = parseFloat(argumento.replace(",", "."));
+        if (isNaN(valorDigitado) || valorDigitado < 5) {
+            return ctx.reply("❌ *Valor inválido!*\nO valor mínimo para depósito é de *R$ 5,00*.", { parse_mode: "Markdown" });
+        }
+        return depararEGerarPixSaldo(ctx, valorDigitado);
+    }
+
+    // Se ele digitou apenas /pix, o bot pergunta o valor usando ForceReply
+    await ctx.reply("💵 *Digite o valor que deseja adicionar em saldo:*\n\n_(Valor mínimo: R$ 5,00)_", {
+        reply_markup: { force_reply: true }
+    });
+});
+
 bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
     const binDigitada = ctx.match[1];
     const pagina = parseInt(ctx.match[2]);
@@ -181,8 +200,22 @@ bot.callbackQuery("menu_principal", async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
+// Painel Inicial do Perfil com botão para "Minhas Frases"
 bot.callbackQuery("menu_perfil", async (ctx) => {
-    await exibirPerfilComCompras(ctx, 0);
+    const userId = ctx.from.id;
+    const saldoAtual = await obterSaldo(userId);
+    const listaDeCompras = await obterCompras(userId);
+    const totalCompras = listaDeCompras.length;
+
+    const textoPerfil = `👤 *Seu Perfil de Usuário*\n\n🆔 *ID:* \`${userId}\`\n💰 *Saldo em Conta:* R$ ${saldoAtual.toFixed(2)}\n🛍️ *Total de Frases Compradas:* ${totalCompras}`;
+
+    const teclado = new InlineKeyboard();
+    if (totalCompras > 0) {
+        teclado.text("🛍️ Minhas Frases", "perfil_page_0").row();
+    }
+    teclado.text("⬅️ Voltar ao Menu", "menu_principal");
+
+    await ctx.editMessageText(textoPerfil, { parse_mode: "Markdown", reply_markup: teclado });
     await ctx.answerCallbackQuery();
 });
 
@@ -196,21 +229,23 @@ async function exibirPerfilComCompras(ctx, index) {
     const userId = ctx.from.id;
     const listaDeCompras = await obterCompras(userId); 
     const totalCompras = listaDeCompras.length;
-    const saldoAtual = await obterSaldo(userId); 
     
-    let textoPerfil = `👤 *Seu Perfil de Usuário*\n🆔 *ID:* \`${userId}\`\n💰 *Saldo em Conta:* R$ ${saldoAtual.toFixed(2)}\n\n--- \n🛍️ *Suas Compras:* `;
+    let textoPerfil = `🛍️ *Suas Frases Compradas* (${index + 1}/${totalCompras})\n\n`;
     const teclado = new InlineKeyboard();
 
     if (totalCompras === 0) {
         textoPerfil += `_Você ainda não comprou nenhuma frase._`;
+        teclado.text("⬅️ Voltar ao Perfil", "menu_perfil");
     } else {
         const item = listaDeCompras[index];
-        textoPerfil += `(${index + 1}/${totalCompras})\n\n📦 *${item.nome}*\n\n${item.completo}`;
+        textoPerfil += `📦 *${item.nome}*\n\n${item.completo}`;
+        
         if (index > 0) teclado.text("⬅️ Ant", `perfil_page_${index - 1}`);
         if (index < totalCompras - 1) teclado.text("Próx ➡️", `perfil_page_${index + 1}`);
+        
+        teclado.row().text("⬅️ Voltar ao Perfil", "menu_perfil");
     }
 
-    teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
     await ctx.editMessageText(textoPerfil, { parse_mode: "Markdown", reply_markup: teclado });
 }
 
@@ -269,7 +304,6 @@ function fazerRequisicao(url, options, bodyData = null) {
     });
 }
 
-// 🛒 LOGICA DE PAGAMENTO COMPLETA (SALDO OU PIX)
 bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     const userId = ctx.from.id;
     const produtoId = parseInt(ctx.match[1]);
@@ -283,13 +317,12 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     const produto = produtos[produtoIndex];
     const saldoAtual = await obterSaldo(userId);
 
-    // 🔥 COMPRA DIRETA COM SALDO DA CARTEIRA
+    // 🔥 Compra Direta com Saldo salvo no Banco
     if (saldoAtual >= produto.preco) {
         const novoSaldo = saldoAtual - produto.preco;
-        await atualizarSaldo(userId, novoSaldo); // Atualiza no banco Supabase
-        await salvarCompra(userId, produto); // Grava histórico permanente no Supabase
+        await atualizarSaldo(userId, novoSaldo); 
+        await salvarCompra(userId, produto); 
 
-        // Remove o produto comprado do array em memória para ninguém mais comprar
         produtos.splice(produtoIndex, 1);
 
         await ctx.editMessageText(`🎉 *COMPRA APROVADA VIA CARTEIRA!*\n\n${produto.completo}\n\n📉 *Saldo restante:* R$ ${novoSaldo.toFixed(2)}`, { parse_mode: "Markdown" });
@@ -297,7 +330,6 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
         return;
     }
 
-    // 💸 SE NÃO TIVER SALDO, GERA O PIX DO MERCADO PAGO
     await ctx.editMessageText("⏳ Gerando seu código Pix copia e cola, aguarde um instante...");
     await ctx.answerCallbackQuery();
 
@@ -361,6 +393,62 @@ bot.callbackQuery("menu_saldo", async (ctx) => {
     });
 });
 
+// Função centralizada para gerar o Pix de Recarga de Saldo
+async function depararEGerarPixSaldo(ctx, valorDigitado) {
+    const msgAviso = await ctx.reply("⏳ _Gerando seu Pix de Saldo..._");
+
+    try {
+        const url = "https://api.mercadopago.com/v1/payments";
+        const options = {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${process.env.MP_TOKEN}`,
+                "Content-Type": "application/json",
+                "X-Idempotency-Key": `${Date.now()}-${ctx.from.id}`
+            }
+        };
+        const body = {
+            transaction_amount: valorDigitado,
+            description: `Adicionar Saldo - User: ${ctx.from.id}`,
+            payment_method_id: "pix",
+            payer: { email: "comprador_telegram@email.com" }
+        };
+
+        const data = await fazerRequisicao(url, options, body);
+        const pixCopiaCola = data.point_of_interaction?.transaction_data?.qr_code;
+        if (!pixCopiaCola) throw new Error("Erro Mercado Pago");
+
+        try { await ctx.api.deleteMessage(ctx.chat.id, msgAviso.message_id); } catch(e){}
+
+        await ctx.reply(`✅ *PIX de Saldo Gerado!*\n💰 *Valor:* R$ ${valorDigitado.toFixed(2)}\n\n👇 Copie o código abaixo:`, { parse_mode: "Markdown" });
+        await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
+
+        let tentativesSaldo = 0;
+        const checarSaldo = setInterval(async () => {
+            tentativesSaldo++;
+            try {
+                const statusData = await fazerRequisicao(`https://api.mercadopago.com/v1/payments/${data.id}`, {
+                    method: "GET",
+                    headers: { "Authorization": `Bearer ${process.env.MP_TOKEN}` }
+                });
+
+                if (statusData.status === "approved") {
+                    clearInterval(checarSaldo);
+                    const saldoAtual = await obterSaldo(ctx.from.id);
+                    await atualizarSaldo(ctx.from.id, saldoAtual + valorDigitado); 
+
+                    await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n*R$ ${valorDigitado.toFixed(2)}* foram adicionados à sua carteira.`, { parse_mode: "Markdown" });
+                }
+            } catch (err) {}
+            if (tentativesSaldo >= 60) clearInterval(checarSaldo);
+        }, 10000);
+
+    } catch (error) {
+        try { await ctx.api.deleteMessage(ctx.chat.id, msgAviso.message_id); } catch(e){}
+        await ctx.reply("❌ Erro ao gerar o Pix.");
+    }
+}
+
 bot.on("message", async (ctx) => {
     const reply = ctx.message.reply_to_message;
     if (!reply || !reply.text) return; 
@@ -369,58 +457,9 @@ bot.on("message", async (ctx) => {
         const valorDigitado = parseFloat(ctx.message.text.replace(",", "."));
         if (isNaN(valorDigitado) || valorDigitado < 5) return ctx.reply("❌ *Valor inválido!*");
 
-        const msgAviso = await ctx.reply("⏳ _Gerando seu Pix de Saldo..._");
-
-        try {
-            const url = "https://api.mercadopago.com/v1/payments";
-            const options = {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${process.env.MP_TOKEN}`,
-                    "Content-Type": "application/json",
-                    "X-Idempotency-Key": `${Date.now()}-${ctx.from.id}`
-                }
-            };
-            const body = {
-                transaction_amount: valorDigitado,
-                description: `Adicionar Saldo - User: ${ctx.from.id}`,
-                payment_method_id: "pix",
-                payer: { email: "comprador_telegram@email.com" }
-            };
-
-            const data = await fazerRequisicao(url, options, body);
-            const pixCopiaCola = data.point_of_interaction?.transaction_data?.qr_code;
-            if (!pixCopiaCola) throw new Error("Erro Mercado Pago");
-
-            try { await ctx.api.deleteMessage(ctx.chat.id, msgAviso.message_id); } catch(e){}
-
-            await ctx.reply(`✅ *PIX de Saldo Gerado!* Valor: R$ ${valorDigitado.toFixed(2)}`);
-            await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
-
-            let tentativesSaldo = 0;
-            const checarSaldo = setInterval(async () => {
-                tentativesSaldo++;
-                try {
-                    const statusData = await fazerRequisicao(`https://api.mercadopago.com/v1/payments/${data.id}`, {
-                        method: "GET",
-                        headers: { "Authorization": `Bearer ${process.env.MP_TOKEN}` }
-                    });
-
-                    if (statusData.status === "approved") {
-                        clearInterval(checarSaldo);
-                        const saldoAtual = await obterSaldo(ctx.from.id);
-                        await atualizarSaldo(ctx.from.id, saldoAtual + valorDigitado); 
-
-                        await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!* R$ ${valorDigitado.toFixed(2)} adicionados.`);
-                    }
-                } catch (err) {}
-                if (tentativesSaldo >= 60) clearInterval(checarSaldo);
-            }, 10000);
-
-        } catch (error) {
-            await ctx.reply("❌ Erro ao gerar o Pix.");
-        }
+        await depararEGerarPixSaldo(ctx, valorDigitado);
     }
 });
 
 bot.start();
+
