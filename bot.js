@@ -17,12 +17,14 @@ const bot = new Bot(process.env.TELEGRAM_TOKEN);
 // 🔥 CONEXÃO COM O BANCO DE DADOS SUPABASE
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// Funções para gerenciar o Saldo no Banco de Dados
+// ==========================================
+// FUNÇÕES DO BANCO DE DADOS (SUPABASE)
+// ==========================================
+
 async function obterSaldo(userId) {
     const idStr = String(userId);
     const { data, error } = await supabase.from("carteiras").select("saldo").eq("user_id", idStr).single();
     if (error || !data) {
-        // Se o usuário não existir no banco, cria ele com saldo 0
         await supabase.from("carteiras").insert([{ user_id: idStr, saldo: 0.0 }]);
         return 0.0;
     }
@@ -51,45 +53,25 @@ async function salvarCompra(userId, produto) {
     }]);
 }
 
+// 📦 Novas funções para a Vitrine no Banco de Dados
+async function obterProdutosDoBanco(binFiltro = null) {
+    let query = supabase.from("produtos").select("*").order("id", { ascending: true });
+    if (binFiltro) query = query.eq("bin", binFiltro);
+    const { data, error } = await query;
+    if (error || !data) return [];
+    return data;
+}
+
+async function removerProdutoDoBanco(produtoId) {
+    await supabase.from("produtos").delete().eq("id", produtoId);
+}
+
 // 👑 ID DO TELEGRAM DO ADMINISTRADOR:
 const ADMIN_ID = "8827427559"; 
 
-// 📦 VITRINE DE PRODUTOS
-let produtos = [
-    { 
-        id: 1, 
-        bin: "516292", 
-        nome: "Cartão Nubank Platinum - Mastercard", 
-        preco: 2.00, 
-        precoTexto: "R$ 2,00",
-        demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845634873`, 
-        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/203\n🔐 cvv: 363\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845680873`
-    }, { 
-        id: 2, 
-        bin: "516292", 
-        nome: "Cartão Nubank Platinum - Mastercard", 
-        preco: 2.00, 
-        precoTexto: "R$ 2,00",
-        demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`, 
-        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/2043\n🔐 cvv: 500\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873\n score : 300`
-    }, {
-        id: 3, 
-        bin: "516292", 
-        nome: "Cartão Nubank Platinum - Mastercard", 
-        preco: 2.00, 
-        precoTexto: "R$ 2,00",
-        demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845634873`, 
-        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/203\n🔐 cvv: 363\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845680873`
-    }, { 
-        id: 4, 
-        bin: "516292", 
-        nome: "Cartão Nubank Platinum - Mastercard", 
-        preco: 2.00, 
-        precoTexto: "R$ 2,00",
-        demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`, 
-        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/2043\n🔐 cvv: 500\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873\n score : 300`
-    }
-];
+// ==========================================
+// COMANDOS & MENUS
+// ==========================================
 
 const menuPrincipal = new InlineKeyboard()
     .text("🛒 Comprar ", "menu_comprar")
@@ -107,12 +89,13 @@ bot.command("start", async (ctx) => {
 bot.command("bin", async (ctx) => {
     const binDigitada = ctx.match ? ctx.match.trim() : "";
     if (!binDigitada) return ctx.reply("❌ Por favor, informe a BIN. Exemplo: `/bin 516292`", { parse_mode: "Markdown" });
-    const produtosFiltrados = produtos.filter(p => p.bin === binDigitada);
+    
+    const produtosFiltrados = await obterProdutosDoBanco(binDigitada);
     if (produtosFiltrados.length === 0) return ctx.reply(`📭 Nenhuma frase encontrada vinculada à BIN *${binDigitada}*.`, { parse_mode: "Markdown" });
     await exibirCarrosselBinFiltrado(ctx, binDigitada, 0, false);
 });
 
-// 👑 COMANDO EXCLUSIVO DO ADMIN: /addsaldo <id> <valor>
+// 👑 COMANDO EXCLUSIVO: /addsaldo <id> <valor>
 bot.command("addsaldo", async (ctx) => {
     const userId = String(ctx.from.id);
     if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
@@ -135,11 +118,55 @@ bot.command("addsaldo", async (ctx) => {
     } catch (e){}
 });
 
+// 👑 COMANDO EXCLUSIVO: /addproduto
+bot.command("addproduto", async (ctx) => {
+    const userId = String(ctx.from.id);
+    if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
+
+    const texto = ctx.match ? ctx.match.trim() : "";
+    const partes = texto.split("|");
+
+    if (partes.length < 5) {
+        return ctx.reply("❌ *Formato inválido para adicionar produto!*\n\nUse exatamente assim:\n`/addproduto Nome do Produto | Preco (Ex: 2.00) | BIN | Texto Demonstracao | Texto Completo`", { parse_mode: "Markdown" });
+    }
+
+    const nome = partes[0].trim();
+    const preco = parseFloat(partes[1].trim().replace(",", "."));
+    const bin = partes[2].trim();
+    const demonstracao = partes[3].trim();
+    const completo = partes[4].trim();
+
+    if (isNaN(preco)) return ctx.reply("❌ Preço inválido.");
+
+    const { error } = await supabase.from("produtos").insert([{
+        nome,
+        preco,
+        preco_texto: `R$ ${preco.toFixed(2)}`,
+        bin,
+        demonstracao,
+        completo
+    }]);
+
+    if (error) {
+        return ctx.reply("❌ Erro ao salvar o produto no banco de dados.");
+    }
+
+    await ctx.reply(`✅ *Produto adicionado com sucesso ao estoque!*\n\n📦 *Item:* ${nome}\n💳 *BIN:* ${bin}\n💰 *Preço:* R$ ${preco.toFixed(2)}`, { parse_mode: "Markdown" });
+});
+
+// 👑 COMANDO EXCLUSIVO: /estoque
+bot.command("estoque", async (ctx) => {
+    const userId = String(ctx.from.id);
+    if (userId !== ADMIN_ID) return ctx.reply("❌ Sem permissão.");
+
+    const lista = await obterProdutosDoBanco();
+    await ctx.reply(`📊 *Estoque Atual:* ${lista.length} frases disponíveis no banco de dados.`, { parse_mode: "Markdown" });
+});
+
 // 💰 COMANDO DIRETO: /pix ou /pix <valor>
 bot.command("pix", async (ctx) => {
     const argumento = ctx.match ? ctx.match.trim() : "";
 
-    // Se o usuário digitou o valor direto (ex: /pix 10)
     if (argumento) {
         const valorDigitado = parseFloat(argumento.replace(",", "."));
         if (isNaN(valorDigitado) || valorDigitado < 5) {
@@ -148,11 +175,14 @@ bot.command("pix", async (ctx) => {
         return depararEGerarPixSaldo(ctx, valorDigitado);
     }
 
-    // Se ele digitou apenas /pix, o bot pergunta o valor usando ForceReply
     await ctx.reply("💵 *Digite o valor que deseja adicionar em saldo:*\n\n_(Valor mínimo: R$ 5,00)_", {
         reply_markup: { force_reply: true }
     });
 });
+
+// ==========================================
+// PROCESSAMENTO DE CALLBACKS & CARROSSEIS
+// ==========================================
 
 bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
     const binDigitada = ctx.match[1];
@@ -163,7 +193,7 @@ bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
 
 async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem) {
     const userId = String(ctx.from.id);
-    const listaFiltrada = produtos.filter(p => p.bin === binTarget);
+    const listaFiltrada = await obterProdutosDoBanco(binTarget);
     const total = listaFiltrada.length;
 
     if (total === 0 || !listaFiltrada[index]) {
@@ -179,7 +209,7 @@ async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem)
     if (userId === ADMIN_ID) {
         textoBin += `👑 *MODO ADMINISTRADOR*\n\n${produto.completo}`;
     } else {
-        textoBin += `${produto.demonstracao}\n\n💸 *Valor:* ${produto.precoTexto}`;
+        textoBin += `${produto.demonstracao}\n\n💸 *Valor:* ${produto.preco_texto}`;
     }
 
     const teclado = new InlineKeyboard();
@@ -200,7 +230,6 @@ bot.callbackQuery("menu_principal", async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-// Painel Inicial do Perfil com botão para "Minhas Frases"
 bot.callbackQuery("menu_perfil", async (ctx) => {
     const userId = ctx.from.id;
     const saldoAtual = await obterSaldo(userId);
@@ -262,7 +291,8 @@ bot.callbackQuery(/^comprar_page_(\d+)$/, async (ctx) => {
 
 async function enviarCarrossel(ctx, index) {
     const userId = String(ctx.from.id);
-    const total = produtos.length;
+    const produtosLista = await obterProdutosDoBanco();
+    const total = produtosLista.length;
 
     if (total === 0) {
         return ctx.editMessageText("📭 A vitrine está vazia no momento!", {
@@ -271,13 +301,13 @@ async function enviarCarrossel(ctx, index) {
     }
 
     const indexAtual = index >= total ? total - 1 : index;
-    const produto = produtos[indexAtual];
+    const produto = produtosLista[indexAtual];
 
     let textoProduto = `📚 *Vitrine de Frases* (${indexAtual + 1}/${total})\n\n`;
     if (userId === ADMIN_ID) {
         textoProduto += `👑 *MODO ADMINISTRADOR*\n\n${produto.completo}`;
     } else {
-        textoProduto += `${produto.demonstracao}\n\n💰 *Preço:* ${produto.precoTexto}`;
+        textoProduto += `${produto.demonstracao}\n\n💰 *Preço:* ${produto.preco_texto}`;
     }
     
     const teclado = new InlineKeyboard();
@@ -307,23 +337,24 @@ function fazerRequisicao(url, options, bodyData = null) {
 bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     const userId = ctx.from.id;
     const produtoId = parseInt(ctx.match[1]);
-    const produtoIndex = produtos.findIndex(p => p.id === produtoId);
+    
+    const produtosLista = await obterProdutosDoBanco();
+    const produtoIndex = produtosLista.findIndex(p => p.id === produtoId);
 
     if (produtoIndex === -1) {
         await ctx.answerCallbackQuery({ text: "❌ Desculpe, este produto acabou de ser vendido!", show_alert: true });
         return;
     }
 
-    const produto = produtos[produtoIndex];
+    const produto = produtosLista[produtoIndex];
     const saldoAtual = await obterSaldo(userId);
 
-    // 🔥 Compra Direta com Saldo salvo no Banco
+    // 🔥 Compra Direta com Saldo
     if (saldoAtual >= produto.preco) {
         const novoSaldo = saldoAtual - produto.preco;
         await atualizarSaldo(userId, novoSaldo); 
         await salvarCompra(userId, produto); 
-
-        produtos.splice(produtoIndex, 1);
+        await removerProdutoDoBanco(produto.id); // Remove do Supabase permanentemente
 
         await ctx.editMessageText(`🎉 *COMPRA APROVADA VIA CARTEIRA!*\n\n${produto.completo}\n\n📉 *Saldo restante:* R$ ${novoSaldo.toFixed(2)}`, { parse_mode: "Markdown" });
         await ctx.answerCallbackQuery({ text: "Compra realizada com saldo!" });
@@ -355,7 +386,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
         const paymentId = data.id;
 
         if (!pixCopiaCola) throw new Error("Erro Mercado Pago");
-        await ctx.reply(`✅ *PIX Gerado!*\n\n💵 *Valor:* ${produto.precoTexto}\n\n👇 Copie o código Pix abaixo:`, { parse_mode: "Markdown" });
+        await ctx.reply(`✅ *PIX Gerado!*\n\n💵 *Valor:* ${produto.preco_texto}\n\n👇 Copie o código Pix abaixo:`, { parse_mode: "Markdown" });
         await ctx.reply(`\`${pixCopiaCola}\``, { parse_mode: "Markdown" });
 
         let tentativas = 0;
@@ -370,10 +401,8 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                 if (statusData.status === "approved") {
                     clearInterval(checarPagamento);
                     
-                    const indexFinal = produtos.findIndex(p => p.id === produto.id);
-                    if (indexFinal !== -1) produtos.splice(indexFinal, 1);
-
                     await salvarCompra(userId, produto); 
+                    await removerProdutoDoBanco(produto.id); // Remove do Supabase permanentemente
 
                     await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n${produto.completo}`, { parse_mode: "Markdown" });
                 }
@@ -393,7 +422,6 @@ bot.callbackQuery("menu_saldo", async (ctx) => {
     });
 });
 
-// Função centralizada para gerar o Pix de Recarga de Saldo
 async function depararEGerarPixSaldo(ctx, valorDigitado) {
     const msgAviso = await ctx.reply("⏳ _Gerando seu Pix de Saldo..._");
 
