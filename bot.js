@@ -134,6 +134,7 @@ bot.command("addsaldo", async (ctx) => {
     } catch (e){}
 });
 
+// 🔄 ENCAIXE E SUPORTE PARA PRODUTOS COMPLEXOS ATUALIZADO
 bot.command("addproduto", async (ctx) => {
     const userId = String(ctx.from.id);
     if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
@@ -142,7 +143,7 @@ bot.command("addproduto", async (ctx) => {
     const partes = texto.split("|");
 
     if (partes.length < 5) {
-        return ctx.reply("❌ *Formato inválido para adicionar produto!*\n\nUse exatamente assim:\n`/addproduto Nome do Produto | Preco (Ex: 2.00) | BIN | Texto Demonstracao | Texto Completo`", { parse_mode: "Markdown" });
+        return ctx.reply("❌ *Formato inválido para adicionar produto!*\n\nUse exatamente assim:\n`/addproduto Nome do Produto | Preco (Ex: 28.00) | BIN | Texto Demonstracao | Texto Completo`", { parse_mode: "Markdown" });
     }
 
     const nome = partes[0].trim();
@@ -156,7 +157,7 @@ bot.command("addproduto", async (ctx) => {
     const { error } = await supabase.from("produtos").insert([{
         nome,
         preco,
-        preco_texto: `R$ ${preco.toFixed(2)}`,
+        preco_texto: `R$ ${preco.toFixed(2).replace(".", ",")}`, // Trata formato brasileiro (Ex: R$ 28,00)
         bin,
         demonstracao,
         completo
