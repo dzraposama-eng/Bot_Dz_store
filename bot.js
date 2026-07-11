@@ -72,8 +72,28 @@ let produtos = [
         precoTexto: "R$ 2,00",
         demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`, 
         completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/2043\n🔐 cvv: 500\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`\n score : 300
+    
+   } ,  {
+            id: 1, 
+        bin: "516292", 
+        nome: "Cartão Nubank Platinum - Mastercard", 
+        preco: 2.00, 
+        precoTexto: "R$ 2,00",
+        demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845634873`, 
+        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/203\n🔐 cvv: 363\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845680873`
+    } , { 
+        id: 2, 
+        bin: "516292", 
+        nome: "Cartão Nubank Platinum - Mastercard", 
+        preco: 2.00, 
+        precoTexto: "R$ 2,00",
+        demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`, 
+        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/2043\n🔐 cvv: 500\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`\n score : 300
     }
+
 ];
+
+
 
 const menuPrincipal = new InlineKeyboard()
     .text("🛒 Comprar ", "menu_comprar")
