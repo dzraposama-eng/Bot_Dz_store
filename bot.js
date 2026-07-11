@@ -54,7 +54,7 @@ async function salvarCompra(userId, produto) {
 // 👑 ID DO TELEGRAM DO ADMINISTRADOR:
 const ADMIN_ID = "8827427559"; 
 
-// 📦 VITRINE DE PRODUTOS
+// 📦 VITRINE DE PRODUTOS (IDs corrigidos e strings ajustadas)
 let produtos = [
     { 
         id: 1, 
@@ -64,35 +64,32 @@ let produtos = [
         precoTexto: "R$ 2,00",
         demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845634873`, 
         completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/203\n🔐 cvv: 363\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845680873`
-    } , { 
+    }, { 
         id: 2, 
         bin: "516292", 
         nome: "Cartão Nubank Platinum - Mastercard", 
         preco: 2.00, 
         precoTexto: "R$ 2,00",
         demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`, 
-        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/2043\n🔐 cvv: 500\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`\n score : 300
-    } , {
-        id: 1, 
+        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/2043\n🔐 cvv: 500\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873\n score : 300`
+    }, {
+        id: 3, 
         bin: "516292", 
         nome: "Cartão Nubank Platinum - Mastercard", 
         preco: 2.00, 
         precoTexto: "R$ 2,00",
         demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845634873`, 
         completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/203\n🔐 cvv: 363\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: vanessa g almeida\n🪪 cpf: 25845680873`
-    } , { 
-        id: 2, 
+    }, { 
+        id: 4, 
         bin: "516292", 
         nome: "Cartão Nubank Platinum - Mastercard", 
         preco: 2.00, 
         precoTexto: "R$ 2,00",
         demonstracao: `✨Detalhes do cartão\n💳 cartão: 516292*********\n📆 Validade: 07/2033\n🔐 Cod: ***\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`, 
-        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/2043\n🔐 cvv: 500\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873`\n score : 300
+        completo: `✨Detalhes do cartão (LIBERADO)\n💳 cartão: 516292000055267\n📆 Validade: 07/2043\n🔐 cvv: 500\n\n🏳️ Bandeira: mastercard\n💠 Nível: nubank platinum\n⚜️ Tipo: credit\n🏛 Banco: nu pagamentos sa\n🌍 Pais: brazil\n\n👤Nome: marcos g almeida\n🪪 cpf: 25845634873\n score : 300`
     }
-
 ];
-
-
 
 const menuPrincipal = new InlineKeyboard()
     .text("🛒 Comprar ", "menu_comprar")
@@ -129,7 +126,7 @@ bot.command("addsaldo", async (ctx) => {
 
     const saldoAtual = await obterSaldo(idCliente);
     const novoSaldo = saldoAtual + valorAdicionar;
-    await atualizarSaldo(idCliente, novoSaldo); // Salva no banco
+    await atualizarSaldo(idCliente, novoSaldo); 
 
     await ctx.reply(`✅ *Saldo adicionado com sucesso!*\n\n👤 *ID do Cliente:* \`${idCliente}\`\n💰 *Valor inserido:* R$ ${valorAdicionar.toFixed(2)}\n💳 *Saldo total atual:* R$ ${novoSaldo.toFixed(2)}`, { parse_mode: "Markdown" });
 
@@ -197,9 +194,9 @@ bot.callbackQuery(/^perfil_page_(\d+)$/, async (ctx) => {
 
 async function exibirPerfilComCompras(ctx, index) {
     const userId = ctx.from.id;
-    const listaDeCompras = await obterCompras(userId); // Busca do banco
+    const listaDeCompras = await obterCompras(userId); 
     const totalCompras = listaDeCompras.length;
-    const saldoAtual = await obterSaldo(userId); // Busca do banco
+    const saldoAtual = await obterSaldo(userId); 
     
     let textoPerfil = `👤 *Seu Perfil de Usuário*\n🆔 *ID:* \`${userId}\`\n💰 *Saldo em Conta:* R$ ${saldoAtual.toFixed(2)}\n\n--- \n🛍️ *Suas Compras:* `;
     const teclado = new InlineKeyboard();
@@ -262,7 +259,9 @@ function fazerRequisicao(url, options, bodyData = null) {
         const req = https.request(url, options, (res) => {
             let data = "";
             res.on("data", (chunk) => data += chunk);
-            res.on("end", () => resolve(JSON.parse(data)));
+            res.on("end", () => {
+                try { resolve(JSON.parse(data)); } catch(e) { resolve({}); }
+            });
         });
         req.on("error", (err) => reject(err));
         if (bodyData) req.write(JSON.stringify(bodyData));
@@ -270,28 +269,37 @@ function fazerRequisicao(url, options, bodyData = null) {
     });
 }
 
+// 🛒 LOGICA DE PAGAMENTO COMPLETA (SALDO OU PIX)
 bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     const userId = ctx.from.id;
     const produtoId = parseInt(ctx.match[1]);
     const produtoIndex = produtos.findIndex(p => p.id === produtoId);
 
-    if (produtoIndex === -1) return ctx.reply("❌ Desculpe, este produto acabou de ser vendido!");
+    if (produtoIndex === -1) {
+        await ctx.answerCallbackQuery({ text: "❌ Desculpe, este produto acabou de ser vendido!", show_alert: true });
+        return;
+    }
 
     const produto = produtos[produtoIndex];
     const saldoAtual = await obterSaldo(userId);
 
-    // Compra Direta com Saldo salvo no Banco
+    // 🔥 COMPRA DIRETA COM SALDO DA CARTEIRA
     if (saldoAtual >= produto.preco) {
-        await atualizarSaldo(userId, saldoAtual - produto.preco); // Atualiza no banco
-        await salvarCompra(userId, produto); // Grava histórico permanente
+        const novoSaldo = saldoAtual - produto.preco;
+        await atualizarSaldo(userId, novoSaldo); // Atualiza no banco Supabase
+        await salvarCompra(userId, produto); // Grava histórico permanente no Supabase
 
+        // Remove o produto comprado do array em memória para ninguém mais comprar
         produtos.splice(produtoIndex, 1);
 
-        await ctx.editMessageText(`🎉 *COMPRA APROVADA VIA CARTEIRA!*\n\n${produto.completo}`, { parse_mode: "Markdown" });
-        return ctx.answerCallbackQuery();
+        await ctx.editMessageText(`🎉 *COMPRA APROVADA VIA CARTEIRA!*\n\n${produto.completo}\n\n📉 *Saldo restante:* R$ ${novoSaldo.toFixed(2)}`, { parse_mode: "Markdown" });
+        await ctx.answerCallbackQuery({ text: "Compra realizada com saldo!" });
+        return;
     }
 
+    // 💸 SE NÃO TIVER SALDO, GERA O PIX DO MERCADO PAGO
     await ctx.editMessageText("⏳ Gerando seu código Pix copia e cola, aguarde um instante...");
+    await ctx.answerCallbackQuery();
 
     try {
         const url = "https://api.mercadopago.com/v1/payments";
@@ -333,7 +341,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                     const indexFinal = produtos.findIndex(p => p.id === produto.id);
                     if (indexFinal !== -1) produtos.splice(indexFinal, 1);
 
-                    await salvarCompra(userId, produto); // Grava permanente
+                    await salvarCompra(userId, produto); 
 
                     await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n${produto.completo}`, { parse_mode: "Markdown" });
                 }
@@ -401,7 +409,7 @@ bot.on("message", async (ctx) => {
                     if (statusData.status === "approved") {
                         clearInterval(checarSaldo);
                         const saldoAtual = await obterSaldo(ctx.from.id);
-                        await atualizarSaldo(ctx.from.id, saldoAtual + valorDigitado); // Guarda de forma persistente
+                        await atualizarSaldo(ctx.from.id, saldoAtual + valorDigitado); 
 
                         await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!* R$ ${valorDigitado.toFixed(2)} adicionados.`);
                     }
@@ -416,4 +424,3 @@ bot.on("message", async (ctx) => {
 });
 
 bot.start();
-
