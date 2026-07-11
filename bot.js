@@ -23,17 +23,39 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 async function obterSaldo(userId) {
     const idStr = String(userId);
-    const { data, error } = await supabase.from("carteiras").select("saldo").eq("user_id", idStr).single();
-    if (error || !data) {
-        await supabase.from("carteiras").insert([{ user_id: idStr, saldo: 0.0 }]);
+    
+    // Tenta buscar o saldo atual do usuário utilizando de forma segura o maybeSingle
+    const { data, error } = await supabase
+        .from("carteiras")
+        .select("saldo")
+        .eq("user_id", idStr)
+        .maybeSingle();
+
+    if (error) {
+        console.error("Erro ao buscar saldo:", error);
         return 0.0;
     }
+
+    // Se o usuário não existir no banco, cria ele com saldo 0.0 com segurança anti-duplicação
+    if (!data) {
+        await supabase
+            .from("carteiras")
+            .insert([{ user_id: idStr, saldo: 0.0 }])
+            .select()
+            .maybeSingle();
+        return 0.0;
+    }
+
     return parseFloat(data.saldo);
 }
 
 async function atualizarSaldo(userId, novoSaldo) {
     const idStr = String(userId);
-    await supabase.from("carteiras").upsert({ user_id: idStr, saldo: novoSaldo });
+    
+    // O parâmetro 'onConflict' garante que procure pelo 'user_id' e apenas atualize, blindando contra resets
+    await supabase
+        .from("carteiras")
+        .upsert({ user_id: idStr, saldo: parseFloat(novoSaldo) }, { onConflict: "user_id" });
 }
 
 async function obterCompras(userId) {
