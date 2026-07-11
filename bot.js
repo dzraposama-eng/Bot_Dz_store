@@ -24,7 +24,6 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 async function obterSaldo(userId) {
     const idStr = String(userId);
     
-    // Tenta buscar o saldo atual do usuário utilizando de forma segura o maybeSingle
     const { data, error } = await supabase
         .from("carteiras")
         .select("saldo")
@@ -36,7 +35,6 @@ async function obterSaldo(userId) {
         return 0.0;
     }
 
-    // Se o usuário não existir no banco, cria ele com saldo 0.0 com segurança anti-duplicação
     if (!data) {
         await supabase
             .from("carteiras")
@@ -51,8 +49,6 @@ async function obterSaldo(userId) {
 
 async function atualizarSaldo(userId, novoSaldo) {
     const idStr = String(userId);
-    
-    // O parâmetro 'onConflict' garante que procure pelo 'user_id' e apenas atualize, blindando contra resets
     await supabase
         .from("carteiras")
         .upsert({ user_id: idStr, saldo: parseFloat(novoSaldo) }, { onConflict: "user_id" });
@@ -75,7 +71,6 @@ async function salvarCompra(userId, produto) {
     }]);
 }
 
-// 📦 Novas funções para a Vitrine no Banco de Dados
 async function obterProdutosDoBanco(binFiltro = null) {
     let query = supabase.from("produtos").select("*").order("id", { ascending: true });
     if (binFiltro) query = query.eq("bin", binFiltro);
@@ -117,7 +112,6 @@ bot.command("bin", async (ctx) => {
     await exibirCarrosselBinFiltrado(ctx, binDigitada, 0, false);
 });
 
-// 👑 COMANDO EXCLUSIVO: /addsaldo <id> <valor>
 bot.command("addsaldo", async (ctx) => {
     const userId = String(ctx.from.id);
     if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
@@ -140,7 +134,6 @@ bot.command("addsaldo", async (ctx) => {
     } catch (e){}
 });
 
-// 👑 COMANDO EXCLUSIVO: /addproduto
 bot.command("addproduto", async (ctx) => {
     const userId = String(ctx.from.id);
     if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
@@ -176,7 +169,6 @@ bot.command("addproduto", async (ctx) => {
     await ctx.reply(`✅ *Produto adicionado com sucesso ao estoque!*\n\n📦 *Item:* ${nome}\n💳 *BIN:* ${bin}\n💰 *Preço:* R$ ${preco.toFixed(2)}`, { parse_mode: "Markdown" });
 });
 
-// 👑 COMANDO EXCLUSIVO: /estoque
 bot.command("estoque", async (ctx) => {
     const userId = String(ctx.from.id);
     if (userId !== ADMIN_ID) return ctx.reply("❌ Sem permissão.");
@@ -185,7 +177,6 @@ bot.command("estoque", async (ctx) => {
     await ctx.reply(`📊 *Estoque Atual:* ${lista.length} frases disponíveis no banco de dados.`, { parse_mode: "Markdown" });
 });
 
-// 💰 COMANDO DIRETO: /pix ou /pix <valor>
 bot.command("pix", async (ctx) => {
     const argumento = ctx.match ? ctx.match.trim() : "";
 
@@ -371,12 +362,11 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     const produto = produtosLista[produtoIndex];
     const saldoAtual = await obterSaldo(userId);
 
-    // 🔥 Compra Direta com Saldo
     if (saldoAtual >= produto.preco) {
         const novoSaldo = saldoAtual - produto.preco;
         await atualizarSaldo(userId, novoSaldo); 
         await salvarCompra(userId, produto); 
-        await removerProdutoDoBanco(produto.id); // Remove do Supabase permanentemente
+        await removerProdutoDoBanco(produto.id); 
 
         await ctx.editMessageText(`🎉 *COMPRA APROVADA VIA CARTEIRA!*\n\n${produto.completo}\n\n📉 *Saldo restante:* R$ ${novoSaldo.toFixed(2)}`, { parse_mode: "Markdown" });
         await ctx.answerCallbackQuery({ text: "Compra realizada com saldo!" });
@@ -424,7 +414,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                     clearInterval(checarPagamento);
                     
                     await salvarCompra(userId, produto); 
-                    await removerProdutoDoBanco(produto.id); // Remove do Supabase permanentemente
+                    await removerProdutoDoBanco(produto.id); 
 
                     await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n${produto.completo}`, { parse_mode: "Markdown" });
                 }
@@ -444,8 +434,12 @@ bot.callbackQuery("menu_saldo", async (ctx) => {
     });
 });
 
+// 🔥 INSTÂNCIA CORRIGIDA E TRAVADA CONTRA PERDA DE ID
 async function depararEGerarPixSaldo(ctx, valorDigitado) {
     const msgAviso = await ctx.reply("⏳ _Gerando seu Pix de Saldo..._");
+    
+    // 💡 TRAVA DO ID: Fixa o ID do cliente em uma constante para o loop não perder!
+    const usuarioIdFixo = ctx.from.id;
 
     try {
         const url = "https://api.mercadopago.com/v1/payments";
@@ -454,12 +448,12 @@ async function depararEGerarPixSaldo(ctx, valorDigitado) {
             headers: {
                 "Authorization": `Bearer ${process.env.MP_TOKEN}`,
                 "Content-Type": "application/json",
-                "X-Idempotency-Key": `${Date.now()}-${ctx.from.id}`
+                "X-Idempotency-Key": `${Date.now()}-${usuarioIdFixo}`
             }
         };
         const body = {
             transaction_amount: valorDigitado,
-            description: `Adicionar Saldo - User: ${ctx.from.id}`,
+            description: `Adicionar Saldo - User: ${usuarioIdFixo}`,
             payment_method_id: "pix",
             payer: { email: "comprador_telegram@email.com" }
         };
@@ -484,10 +478,12 @@ async function depararEGerarPixSaldo(ctx, valorDigitado) {
 
                 if (statusData.status === "approved") {
                     clearInterval(checarSaldo);
-                    const saldoAtual = await obterSaldo(ctx.from.id);
-                    await atualizarSaldo(ctx.from.id, saldoAtual + valorDigitado); 
+                    
+                    // 💡 GARANTIA SUPABASE: Envia de forma explícita para o ID estável do comprador
+                    const saldoAtual = await obterSaldo(usuarioIdFixo);
+                    await atualizarSaldo(usuarioIdFixo, saldoAtual + valorDigitado); 
 
-                    await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n*R$ ${valorDigitado.toFixed(2)}* foram adicionados à sua carteira.`, { parse_mode: "Markdown" });
+                    await ctx.api.sendMessage(usuarioIdFixo, `🎉 *PAGAMENTO CONFIRMADO!*\n*R$ ${valorDigitado.toFixed(2)}* foram adicionados à sua carteira.`, { parse_mode: "Markdown" });
                 }
             } catch (err) {}
             if (tentativesSaldo >= 60) clearInterval(checarSaldo);
@@ -512,4 +508,3 @@ bot.on("message", async (ctx) => {
 });
 
 bot.start();
-
