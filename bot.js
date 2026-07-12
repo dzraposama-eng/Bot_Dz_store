@@ -95,7 +95,7 @@ const menuPrincipal = new InlineKeyboard()
     .text("👤 Perfil / Carteira", "menu_perfil")
     .row() 
     .text("💰 Adicionar Saldo", "menu_saldo") 
-    .url("🆘 Suporte (WhatsApp)", "https://wa.me/");
+    .url("🆘 Suporte (WhatsApp)", "https://wa.me/+212663-116806");
 
 bot.command("start", async (ctx) => {
     await ctx.reply(`👋 Bem-vindo a Riley Store!\n\nEscolha uma opção no menu abaixo e boas compras! 🚀`, {
