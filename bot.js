@@ -229,7 +229,7 @@ async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem)
     const teclado = new InlineKeyboard();
     if (index > 0) teclado.text("⬅️ Ant", `bin_filtro_${binTarget}_${index - 1}`);
     if (index < total - 1) teclado.text("Próx ➡️", `bin_filtro_${binTarget}_${index + 1}`);
-    if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
+    if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar CC`, `pagar_id_${produto.id}`);
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
 
     if (editarMensagem) {
@@ -254,7 +254,7 @@ bot.callbackQuery("menu_perfil", async (ctx) => {
 
     const teclado = new InlineKeyboard();
     if (totalCompras > 0) {
-        teclado.text("🛍️ Minhas Frases", "perfil_page_0").row();
+        teclado.text("🛍️ Minhas cc ", "perfil_page_0").row();
     }
     teclado.text("⬅️ Voltar ao Menu", "menu_principal");
 
@@ -273,7 +273,7 @@ async function exibirPerfilComCompras(ctx, index) {
     const listaDeCompras = await obterCompras(userId); 
     const totalCompras = listaDeCompras.length;
     
-    let textoPerfil = `🛍️ *Suas Frases Compradas* (${index + 1}/${totalCompras})\n\n`;
+    let textoPerfil = `🛍️ *Suas CC Compradas* (${index + 1}/${totalCompras})\n\n`;
     const teclado = new InlineKeyboard();
 
     if (totalCompras === 0) {
@@ -317,7 +317,7 @@ async function enviarCarrossel(ctx, index) {
     const indexAtual = index >= total ? total - 1 : index;
     const produto = produtosLista[indexAtual];
 
-    let textoProduto = `📚 *Vitrine de Frases* (${indexAtual + 1}/${total})\n\n`;
+    let textoProduto = `💳 *Vitrine de CC* (${indexAtual + 1}/${total})\n\n`;
     if (userId === ADMIN_ID) {
         textoProduto += `👑 *MODO ADMINISTRADOR*\n\n${produto.completo}`;
     } else {
@@ -327,7 +327,7 @@ async function enviarCarrossel(ctx, index) {
     const teclado = new InlineKeyboard();
     if (indexAtual > 0) teclado.text("⬅️ Ant", `comprar_page_${indexAtual - 1}`);
     if (indexAtual < total - 1) teclado.text("Próx ➡️", `comprar_page_${indexAtual + 1}`);
-    if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar esta Frase`, `pagar_id_${produto.id}`);
+    if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar `, `pagar_id_${produto.id}`);
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
 
     await ctx.editMessageText(textoProduto, { parse_mode: "Markdown", reply_markup: teclado });
