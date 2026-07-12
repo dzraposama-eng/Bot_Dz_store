@@ -183,7 +183,7 @@ bot.command("pix", async (ctx) => {
 
     if (argumento) {
         const valorDigitado = parseFloat(argumento.replace(",", "."));
-        if (isNaN(valorDigitado) || valorDigitado < 5) {
+        if (isNaN(valorDigitado) || valorDigitado < 30) {
             return ctx.reply("❌ *Valor inválido!*\nO valor mínimo para depósito é de *R$ 30,00*.", { parse_mode: "Markdown" });
         }
         return depararEGerarPixSaldo(ctx, valorDigitado);
