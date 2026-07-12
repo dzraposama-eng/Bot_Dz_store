@@ -95,7 +95,7 @@ const menuPrincipal = new InlineKeyboard()
     .text("👤 Perfil / Carteira", "menu_perfil")
     .row() 
     .text("💰 Adicionar Saldo", "menu_saldo") 
-    .url("🆘 Suporte (WhatsApp)", "https://wa.me/5500999999999");
+    .url("🆘 Suporte (WhatsApp)", "https://wa.me/");
 
 bot.command("start", async (ctx) => {
     await ctx.reply(`👋 Bem-vindo a Riley Store!\n\nEscolha uma opção no menu abaixo e boas compras! 🚀`, {
@@ -184,12 +184,12 @@ bot.command("pix", async (ctx) => {
     if (argumento) {
         const valorDigitado = parseFloat(argumento.replace(",", "."));
         if (isNaN(valorDigitado) || valorDigitado < 5) {
-            return ctx.reply("❌ *Valor inválido!*\nO valor mínimo para depósito é de *R$ 5,00*.", { parse_mode: "Markdown" });
+            return ctx.reply("❌ *Valor inválido!*\nO valor mínimo para depósito é de *R$ 30,00*.", { parse_mode: "Markdown" });
         }
         return depararEGerarPixSaldo(ctx, valorDigitado);
     }
 
-    await ctx.reply("💵 *Digite o valor que deseja adicionar em saldo:*\n\n_(Valor mínimo: R$ 5,00)_", {
+    await ctx.reply("💵 *Digite o valor que deseja adicionar em saldo:*\n\n_(Valor mínimo: R$ 30,00)_", {
         reply_markup: { force_reply: true }
     });
 });
@@ -250,11 +250,11 @@ bot.callbackQuery("menu_perfil", async (ctx) => {
     const listaDeCompras = await obterCompras(userId);
     const totalCompras = listaDeCompras.length;
 
-    const textoPerfil = `👤 *Seu Perfil de Usuário*\n\n🆔 *ID:* \`${userId}\`\n💰 *Saldo em Conta:* R$ ${saldoAtual.toFixed(2)}\n🛍️ *Total de Frases Compradas:* ${totalCompras}`;
+    const textoPerfil = `👤 *Seu Perfil de Usuário*\n\n🆔 *ID:* \`${userId}\`\n💰 *Saldo em Conta:* R$ ${saldoAtual.toFixed(2)}\n💳 *CC Compradas:* ${totalCompras}`;
 
     const teclado = new InlineKeyboard();
     if (totalCompras > 0) {
-        teclado.text("🛍️ Minhas cc ", "perfil_page_0").row();
+        teclado.text("💳 Minhas cc ", "perfil_page_0").row();
     }
     teclado.text("⬅️ Voltar ao Menu", "menu_principal");
 
