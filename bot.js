@@ -91,11 +91,11 @@ const ADMIN_ID = "8827427559";
 // ==========================================
 
 const menuPrincipal = new InlineKeyboard()
-    .text("🛒 Comprar ", "menu_comprar")
-    .text("👤 Perfil / Carteira", "menu_perfil")
+    .text("💳 Comprar ", "menu_comprar")
+    .text("👤 Perfil ", "menu_perfil")
     .row() 
-    .text("💰 Adicionar Saldo", "menu_saldo") 
-    .url("🆘 Suporte (WhatsApp)", "https://wa.me/212663116806");
+    .text("💰 Saldo", "menu_saldo") 
+    .url("🆘 Suporte ", "https://wa.me/212663116806");
 
 bot.command("start", async (ctx) => {
     await ctx.reply(`👋 Bem-vindo à Riley Store!\n\n              ATENÇÃO \n\n🤖 BOT ANTIFRAUDE ATIVO\n⚠️ VIOLAÇÃO DE REGRAS É BAN\n💎 MATERIAL 100% VIRGEM \n\n O QUE VOCÊ PRECISA SABER \n⏱️ REGRA DOS 5 MINUTOS \nSE O CARTÃO NÃO FOR TROCADO \nEM 5 MINUTOS VOCÊ PERDEU O \nSEU DIREITO DE TROCA \n\n⚙️ O BOT TEM FUNÇÃO CHK \nPARA TESTAR O CARTÃO \nSABER SE ESTÁ DIE OU LIVE \nSE ESTIVER DIE O SEU DINHEIRO \nSERÁ REEMBOLSADO`, {
