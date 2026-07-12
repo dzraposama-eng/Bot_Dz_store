@@ -430,7 +430,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
 
 bot.callbackQuery("menu_saldo", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("💵 *Digite o valor que deseja adicionar em saldo:*\n\n_(Valor mínimo: R$ 5,00)_", {
+    await ctx.reply("💵 *Digite o valor que deseja adicionar em saldo:*\n\n_(Valor mínimo: R$ 20,00)_", {
         reply_markup: { force_reply: true }
     });
 });
