@@ -88,7 +88,7 @@ async function removerProdutoDoBanco(produtoId) {
 }
 
 // 👑 ID DO TELEGRAM DO ADMINISTRADOR:
-const ADMIN_ID = "8827427559"; 
+const ADMIN_ID = "882742759"; 
 
 // ==========================================
 // COMANDOS & MENUS
@@ -130,7 +130,7 @@ bot.command("start", async (ctx) => {
     }
 
     // Se passou na verificação, envia a mensagem de boas-vindas original
-    await ctx.reply(`👋 Bem-vindo à Riley Store!\n\n              ATENÇÃO \n\n🤖 BOT ANTIFRAUDE ATIVO\n⚠️ VIOLAÇÃO DE REGRAS É BAN\n💎 MATERIAL 100% VIRGEM \n\n O QUE VOCÊ PRECISA SABER \n⏱️ REGRA DOS 5 MINUTOS \nSE O CARTÃO NÃO FOR TROCADO \nEM 5 MINUTOS VOCÊ PERDEU O \nSEU DIREITO DE TROCA \n\n⚙️ O BOT TEM FUNÇÃO CHK \nPARA TESTAR O CARTÃO \nSABER SE ESTÁ DIE OU LIVE \nSE ESTIVER DIE O SEU DINHEIRO \nSERÁ REEMBOLSADO`, {
+    await ctx.reply(`👋 Bem-vindo à Riley Store!\n\n           ATENÇÃO \n\n🤖 BOT ANTIFRAUDE ATIVO\n⚠️ VIOLAÇÃO DE REGRAS É BAN\n💎 MATERIAL 100% VIRGEM \n\n O QUE VOCÊ PRECISA SABER \n⏱️ REGRA DOS 5 MINUTOS \nSE O CARTÃO NÃO FOR TROCADO \nEM 5 MINUTOS VOCÊ PERDEU O \nSEU DIREITO DE TROCA \n\n⚙️ O BOT TEM FUNÇÃO CHK \nPARA TESTAR O CARTÃO \nSABER SE ESTÁ DIE OU LIVE \nSE ESTIVER DIE O SEU DINHEIRO \nSERÁ REEMBOLSADO`, {
         reply_markup: menuPrincipal,
     });
 });
