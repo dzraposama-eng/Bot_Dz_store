@@ -466,9 +466,76 @@ async function exibirPerfilComCompras(ctx, index) {
 }
 
 bot.callbackQuery("menu_comprar", async (ctx) => {
-    await enviarCarrossel(ctx, 0);
-    await ctx.answerCallbackQuery();
+    try {
+        await ctx.answerCallbackQuery(); // Responde ao Telegram imediatamente para o botão parar de "girar"
+        await enviarCarrossel(ctx, 0);
+    } catch (e) {
+        console.error("Erro no callback menu_comprar:", e);
+    }
 });
+
+async function enviarCarrossel(ctx, index) {
+    try {
+        const userId = String(ctx.from.id);
+        const produtosLista = await obterProdutosDoBanco();
+        const total = produtosLista.length;
+
+        const tecladoVoltar = new InlineKeyboard().text("⬅️ Voltar ao Menu", "menu_principal");
+
+        // Se o estoque estiver vazio, envia uma mensagem nova garantida em vez de editar e travar
+        if (total === 0) {
+            try {
+                await ctx.editMessageText("📭 A vitrine está vazia no momento!", { reply_markup: tecladoVoltar });
+            } catch (err) {
+                await ctx.reply("📭 A vitrine está vazia no momento!", { reply_markup: tecladoVoltar });
+            }
+            return;
+        }
+
+        const indexAtual = index >= total ? total - 1 : index;
+        const produto = produtosLista[indexAtual];
+
+        if (!produto) {
+            try {
+                await ctx.editMessageText("📭 Produto não encontrado.", { reply_markup: tecladoVoltar });
+            } catch (err) {
+                await ctx.reply("📭 Produto não encontrado.", { reply_markup: tecladoVoltar });
+            }
+            return;
+        }
+
+        let textoProduto = `💳 *Vitrine de CC* (${indexAtual + 1}/${total})\n\n`;
+        
+        const infoDemonstracao = produto.demonstracao || produto.nome || "Sem descrição";
+        const precoMostrar = produto.preco_texto || `R$ ${parseFloat(produto.preco).toFixed(2)}`;
+
+        if (userId === ADMIN_ID) {
+            textoProduto += `👑 *MODO ADMINISTRADOR*\n\n${produto.completo || infoDemonstracao}`;
+        } else {
+            textoProduto += `${infoDemonstracao}\n\n💰 *Preço:* ${precoMostrar}`;
+        }
+        
+        const teclado = new InlineKeyboard();
+        if (indexAtual > 0) teclado.text("⬅️ Ant", `comprar_page_${indexAtual - 1}`);
+        if (indexAtual < total - 1) teclado.text("Próx ➡️", `comprar_page_${indexAtual + 1}`);
+        if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar `, `pagar_id_${produto.id}`);
+        teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
+
+        try {
+            await ctx.editMessageText(textoProduto, { parse_mode: "Markdown", reply_markup: teclado });
+        } catch (error) {
+            // Se falhar a edição (ex: Markdown inválido no produto), envia uma nova mensagem limpa
+            try {
+                await ctx.reply(textoProduto, { parse_mode: "Markdown", reply_markup: teclado });
+            } catch (deepError) {
+                await ctx.reply(textoProduto, { reply_markup: teclado }); // Envia sem markdown se a descrição tiver caracteres especiais
+            }
+        }
+    } catch (error) {
+        console.error("Erro crítico na vitrine:", error);
+    }
+}
+
 
 bot.callbackQuery(/^comprar_page_(\d+)$/, async (ctx) => {
     const pagina = parseInt(ctx.match[1]);
