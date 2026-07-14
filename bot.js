@@ -102,10 +102,36 @@ const menuPrincipal = new InlineKeyboard()
     .url("🆘 Suporte ", "https://wa.me/212663116806");
 
 bot.command("start", async (ctx) => {
+    const userId = ctx.from.id;
+
+    try {
+        // Verifica o status do usuário no grupo
+        const membro = await ctx.api.getChatMember(GRUPO_ID, userId);
+        const statusPermitidos = ["creator", "administrator", "member"];
+
+        if (!statusPermitidos.includes(membro.status)) {
+            // Se não estiver no grupo, envia o botão para entrar
+            const tecladoInscrição = new InlineKeyboard()
+                .url("📢 Entrar no Grupo Riley Store", GRUPO_LINK)
+                .row()
+                .text("🔄 Já entrei! Liberar Acesso", "verificar_membro");
+
+            return await ctx.reply(
+                "⚠️ *ACESSO RESTRITO!*\n\nPara utilizar este bot e acessar o nosso catálogo, você precisa fazer parte do grupo oficial da **Riley Store**.",
+                { parse_mode: "Markdown", reply_markup: tecladoInscrição }
+            );
+        }
+    } catch (error) {
+        console.error("Erro ao verificar membro:", error);
+        // Se der erro (ex: bot não é admin do grupo), avisa no console mas você pode decidir se deixa passar ou bloqueia
+    }
+
+    // Se passou na verificação, envia a mensagem de boas-vindas original
     await ctx.reply(`👋 Bem-vindo à Riley Store!\n\n              ATENÇÃO \n\n🤖 BOT ANTIFRAUDE ATIVO\n⚠️ VIOLAÇÃO DE REGRAS É BAN\n💎 MATERIAL 100% VIRGEM \n\n O QUE VOCÊ PRECISA SABER \n⏱️ REGRA DOS 5 MINUTOS \nSE O CARTÃO NÃO FOR TROCADO \nEM 5 MINUTOS VOCÊ PERDEU O \nSEU DIREITO DE TROCA \n\n⚙️ O BOT TEM FUNÇÃO CHK \nPARA TESTAR O CARTÃO \nSABER SE ESTÁ DIE OU LIVE \nSE ESTIVER DIE O SEU DINHEIRO \nSERÁ REEMBOLSADO`, {
         reply_markup: menuPrincipal,
     });
 });
+
 
 bot.command("bin", async (ctx) => {
     const binDigitada = ctx.match ? ctx.match.trim() : "";
