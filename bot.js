@@ -197,29 +197,50 @@ bot.command("addsaldo", async (ctx) => {
 });
 
 // 🔄 ENCAIXE E SUPORTE PARA PRODUTOS COMPLEXOS ATUALIZADO
-bot.command("addproduto", async (ctx) => {
+bot.command("addprodutobot.command("addproduto", async (ctx) => {
     const userId = String(ctx.from.id);
     if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
 
     const texto = ctx.match ? ctx.match.trim() : "";
     const partes = texto.split("|");
 
-    if (partes.length < 5) {
-        return ctx.reply("❌ *Formato inválido para adicionar produto!*\n\nUse exatamente assim:\n`/addproduto Nome do Produto | Preco (Ex: 28.00) | BIN | Texto Demonstracao | Texto Completo`", { parse_mode: "Markdown" });
+    // Agora esperamos: Nome | Preço | BIN | Dados do Cartão
+    // Exemplo de Dados do Cartão: 5502091234567890|01/2029|789|mastercard|nubank gold|credit|nu pagamentos sa|brazil|STEFANY L N C SILVA|123.456.789-30
+    if (partes.length < 13) {
+        return ctx.reply("❌ *Formato inválido!*\n\nUse assim:\n`/addproduto Nome | Preco | BIN | NumeroCC | MesAno | CVV | Bandeira | Nivel | Tipo | Banco | Pais | NomeCliente | CPF`", { parse_mode: "Markdown" });
     }
 
     const nome = partes[0].trim();
     const preco = parseFloat(partes[1].trim().replace(",", "."));
     const bin = partes[2].trim();
-    const demonstracao = partes[3].trim();
-    const completo = partes[4].trim();
+    
+    const cc = partes[3].trim();
+    const mesAno = partes[4].trim();
+    const cvv = partes[5].trim();
+    const bandeira = partes[6].trim();
+    const nivel = partes[7].trim();
+    const tipo = partes[8].trim();
+    const banco = partes[9].trim();
+    const pais = partes[10].trim();
+    const nomeCliente = partes[11].trim();
+    const cpf = partes[12].trim();
 
     if (isNaN(preco)) return ctx.reply("❌ Preço inválido.");
+
+    // 🕵️‍♂️ CRIA A DEMONSTRAÇÃO (Censurada com asteriscos)
+    const ccMascarada = `${cc.substring(0, 6)}***********`;
+    const cpfMascarado = `******${cpf.slice(-3)}`;
+    const nomeMascarado = nomeCliente.split("").map((letra, i) => i % 2 === 0 ? letra.toLowerCase() : "*").join("");
+
+    const demonstracao = `✨ Detalhes do cartão\n💳 cartão: ${ccMascarada}\n📅 mes / ano: 01/2029\n🔐 cvv: ***\n\n🏳️ bandeira: ${bandeira}\n💠 nível: ${nivel}\n⚜️ tipo: ${tipo}\n🏛️ banco: ${banco}\n🌍 pais: ${pais}\n\n👤 Nome:\n${nomeMascarado}\n🪪 cpf:\n${cpfMascarado}`;
+
+    // 🔓 CRIA O TEXTO COMPLETO (Com os dados reais nos lugares certos)
+    const completo = `✨ Detalhes do cartão\n💳 cartão: ${cc}\n📅 mes / ano: ${mesAno}\n🔐 cvv: ${cvv}\n\n🏳️ bandeira: ${bandeira}\n💠 nível: ${nivel}\n⚜️ tipo: ${tipo}\n🏛️ banco: ${banco}\n🌍 pais: ${pais}\n\n👤 Nome:\n${nomeCliente}\n🪪 cpf:\n${cpf}`;
 
     const { error } = await supabase.from("produtos").insert([{
         nome,
         preco,
-        preco_texto: `R$ ${preco.toFixed(2).replace(".", ",")}`, // Trata formato brasileiro (Ex: R$ 28,00)
+        preco_texto: `R$ ${preco.toFixed(2).replace(".", ",")}`,
         bin,
         demonstracao,
         completo
@@ -229,7 +250,7 @@ bot.command("addproduto", async (ctx) => {
         return ctx.reply("❌ Erro ao salvar o produto no banco de dados.");
     }
 
-    await ctx.reply(`✅ *Produto adicionado com sucesso ao estoque!*\n\n📦 *Item:* ${nome}\n💳 *BIN:* ${bin}\n💰 *Preço:* R$ ${preco.toFixed(2)}`, { parse_mode: "Markdown" });
+    await ctx.reply(`✅ *Produto adicionado com sucesso!*\n\n📦 *Item:* ${nome}\n💳 *BIN:* ${bin}\n💰 *Preço:* R$ ${preco.toFixed(2)}`, { parse_mode: "Markdown" });
 });
 
 bot.command("estoque", async (ctx) => {
