@@ -13,6 +13,10 @@ server.listen(PORT, () => console.log(`Monitor rodando na porta ${PORT}`));
 
 // Inicializa o bot
 const bot = new Bot(process.env.TELEGRAM_TOKEN);
+// CONFIGURAÇÃO DO GRUPO OBRIGATÓRIO
+// Dica: Substitua pelo ID numérico do grupo (ex: -100xxxxxxxxxx) ou pelo @username dele
+const GRUPO_ID = "@RileyStore"; 
+const GRUPO_LINK = "https://t.me/RileyStore"; // Substitua pelo link real do seu grupo
 
 // 🔥 CONEXÃO COM O BANCO DE DADOS SUPABASE
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
