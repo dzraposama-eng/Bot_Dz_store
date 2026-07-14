@@ -326,39 +326,46 @@ bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem) {
+async function enviarCarrossel(ctx, index) {
     const userId = String(ctx.from.id);
-    const listaFiltrada = await obterProdutosDoBanco(binTarget);
-    const total = listaFiltrada.length;
+    const produtosLista = await obterProdutosDoBanco();
+    const total = produtosLista.length;
 
-    if (total === 0 || !listaFiltrada[index]) {
-        const msgVazio = "📭 Esta BIN não possui mais frases disponíveis no momento.";
-        const tecladoVazio = new InlineKeyboard().text("⬅️ Voltar ao Menu", "menu_principal");
-        if (editarMensagem) return ctx.editMessageText(msgVazio, { reply_markup: tecladoVazio });
-        return ctx.reply(msgVazio, { reply_markup: tecladoVazio });
+    if (total === 0) {
+        return ctx.editMessageText("📭 A vitrine está vazia no momento!", {
+            reply_markup: new InlineKeyboard().text("⬅️ Voltar ao Menu", "menu_principal")
+        });
     }
 
-    const produto = listaFiltrada[index];
-    let textoBin = `🔎 *Mostrando ${index + 1} de ${total}*\n\n`;
+    const indexAtual = index >= total ? total - 1 : index;
+    const produto = produtosLista[indexAtual];
+
+    let textoProduto = `💳 *Vitrine de CC* (${indexAtual + 1}/${total})\n\n`;
+    
+    // CORREÇÃO SEGURA: Se o campo demonstracao estiver vazio, ele usa o nome do produto para não travar o bot do cliente
+    const infoDemonstracao = produto.demonstracao || produto.nome || "Produto sem descrição";
+    const precoMostrar = produto.preco_texto || `R$ ${parseFloat(produto.preco).toFixed(2)}`;
 
     if (userId === ADMIN_ID) {
-        textoBin += `👑 *MODO ADMINISTRADOR*\n\n${produto.completo}`;
+        textoProduto += `👑 *MODO ADMINISTRADOR*\n\n${produto.completo || infoDemonstracao}`;
     } else {
-        textoBin += `${produto.demonstracao}\n\n💸 *Valor:* ${produto.preco_texto}`;
+        textoProduto += `${infoDemonstracao}\n\n💰 *Preço:* ${precoMostrar}`;
     }
-
+    
     const teclado = new InlineKeyboard();
-    if (index > 0) teclado.text("⬅️ Ant", `bin_filtro_${binTarget}_${index - 1}`);
-    if (index < total - 1) teclado.text("Próx ➡️", `bin_filtro_${binTarget}_${index + 1}`);
-    if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar CC`, `pagar_id_${produto.id}`);
+    if (indexAtual > 0) teclado.text("⬅️ Ant", `comprar_page_${indexAtual - 1}`);
+    if (indexAtual < total - 1) teclado.text("Próx ➡️", `comprar_page_${indexAtual + 1}`);
+    if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar `, `pagar_id_${produto.id}`);
     teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
 
-    if (editarMensagem) {
-        await ctx.editMessageText(textoBin, { parse_mode: "Markdown", reply_markup: teclado });
-    } else {
-        await ctx.reply(textoBin, { parse_mode: "Markdown", reply_markup: teclado });
+    try {
+        await ctx.editMessageText(textoProduto, { parse_mode: "Markdown", reply_markup: teclado });
+    } catch (error) {
+        // Se ainda der erro de formato, envia como texto normal para garantir que o cliente veja
+        await ctx.editMessageText(textoProduto, { reply_markup: teclado });
     }
 }
+
 
 bot.callbackQuery("menu_principal", async (ctx) => {
     await ctx.editMessageText("Escolha uma opção no menu abaixo:", { reply_markup: menuPrincipal });
