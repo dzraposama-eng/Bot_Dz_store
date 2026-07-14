@@ -88,7 +88,7 @@ async function removerProdutoDoBanco(produtoId) {
 }
 
 // 👑 ID DO TELEGRAM DO ADMINISTRADOR:
-const ADMIN_ID = "882742755"; 
+const ADMIN_ID = "8827427559"; 
 
 // ==========================================
 // COMANDOS & MENUS
