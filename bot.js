@@ -132,6 +132,35 @@ bot.command("start", async (ctx) => {
     });
 });
 
+bot.callbackQuery("verificar_membro", async (ctx) => {
+    const userId = ctx.from.id;
+
+    try {
+        const membro = await ctx.api.getChatMember(GRUPO_ID, userId);
+        const statusPermitidos = ["creator", "administrator", "member"];
+
+        if (statusPermitidos.includes(membro.status)) {
+            await ctx.answerCallbackQuery({ text: "✅ Acesso liberado com sucesso!" });
+            
+            // Edita a mensagem atual e libera o menu do bot
+            await ctx.editMessageText(`👋 Bem-vindo à Riley Store!\n\n              ATENÇÃO \n\n🤖 BOT ANTIFRAUDE ATIVO\n⚠️ VIOLAÇÃO DE REGRAS É BAN\n💎 MATERIAL 100% VIRGEM \n\n O QUE VOCÊ PRECISA SABER \n⏱️ REGRA DOS 5 MINUTOS \nSE O CARTÃO NÃO FOR TROCADO \nEM 5 MINUTOS VOCÊ PERDEU O \nSEU DIREITO DE TROCA \n\n⚙️ O BOT TEM FUNÇÃO CHK \nPARA TESTAR O CARTÃO \nSABER SE ESTÁ DIE OU LIVE \nSE ESTIVER DIE O SEU DINHEIRO \nSERÁ REEMBOLSADO`, {
+                reply_markup: menuPrincipal,
+            });
+        } else {
+            await ctx.answerCallbackQuery({ 
+                text: "❌ Você ainda não entrou no grupo! Entre antes de tentar novamente.", 
+                show_alert: true 
+            });
+        }
+    } catch (error) {
+        console.error("Erro na verificação do botão:", error);
+        await ctx.answerCallbackQuery({ 
+            text: "❌ Erro ao verificar. O bot foi adicionado como ADM no grupo?", 
+            show_alert: true 
+        });
+    }
+});
+
 
 bot.command("bin", async (ctx) => {
     const binDigitada = ctx.match ? ctx.match.trim() : "";
