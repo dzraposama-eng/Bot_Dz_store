@@ -197,7 +197,7 @@ bot.command("addsaldo", async (ctx) => {
 });
 
 // 🔄 ENCAIXE E SUPORTE PARA PRODUTOS COMPLEXOS ATUALIZADO
-bot.command("addprodutobot.command("addproduto", async (ctx) => {
+bot.command("addproduto", async (ctx) => {
     const userId = String(ctx.from.id);
     if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
 
