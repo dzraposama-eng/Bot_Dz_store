@@ -470,7 +470,8 @@ function fazerRequisicao(url, options, bodyData = null) {
 }
 
 bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
-    const userId = ctx.from.id;
+    // CORREÇÃO: Garante que o ID do cliente seja tratado como String, assim como no resto do bot
+    const userId = String(ctx.from.id); 
     const produtoId = parseInt(ctx.match[1]);
     
     const produtosLista = await obterProdutosDoBanco();
@@ -505,7 +506,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
             headers: {
                 "Authorization": `Bearer ${process.env.MP_TOKEN}`,
                 "Content-Type": "application/json",
-                "X-Idempotency-Key": `${Date.now()}-${ctx.from.id}`
+                "X-Idempotency-Key": `${Date.now()}-${userId}` // Usando a variável corrigida
             }
         };
         const body = {
