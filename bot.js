@@ -166,13 +166,50 @@ bot.callbackQuery("verificar_membro", async (ctx) => {
 
 
 bot.command("bin", async (ctx) => {
-    const binDigitada = ctx.match ? ctx.match.trim() : "";
-    if (!binDigitada) return ctx.reply("❌ Por favor, informe a BIN. Exemplo: `/bin 516292`", { parse_mode: "Markdown" });
-    
-    const produtosFiltrados = await obterProdutosDoBanco(binDigitada);
-    if (produtosFiltrados.length === 0) return ctx.reply(`📭 Nenhuma frase encontrada vinculada à BIN *${binDigitada}*.`, { parse_mode: "Markdown" });
-    await exibirCarrosselBinFiltrado(ctx, binDigitada, 0, false);
-});
+async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem) {
+    const userId = String(ctx.from.id);
+    const listaFiltrada = await obterProdutosDoBanco(binTarget);
+    const total = listaFiltrada.length;
+
+    if (total === 0 || !listaFiltrada[index]) {
+        const msgVazio = "📭 Esta BIN não possui mais frases disponíveis no momento.";
+        const tecladoVazio = new InlineKeyboard().text("⬅️ Voltar ao Menu", "menu_principal");
+        if (editarMensagem) return ctx.editMessageText(msgVazio, { reply_markup: tecladoVazio });
+        return ctx.reply(msgVazio, { reply_markup: tecladoVazio });
+    }
+
+    const produto = listaFiltrada[index];
+    let textoBin = `🔎 *Mostrando ${index + 1} de ${total}*\n\n`;
+
+    const infoDemonstracao = produto.demonstracao || produto.nome || "Produto sem descrição";
+    const precoMostrar = produto.preco_texto || `R$ ${parseFloat(produto.preco).toFixed(2)}`;
+
+    if (userId === ADMIN_ID) {
+        textoBin += `👑 *MODO ADMINISTRADOR*\n\n${produto.completo || infoDemonstracao}`;
+    } else {
+        textoBin += `${infoDemonstracao}\n\n💸 *Valor:* ${precoMostrar}`;
+    }
+
+    const teclado = new InlineKeyboard();
+    if (index > 0) teclado.text("⬅️ Ant", `bin_filtro_${binTarget}_${index - 1}`);
+    if (index < total - 1) teclado.text("Próx ➡️", `bin_filtro_${binTarget}_${index + 1}`);
+    if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar CC`, `pagar_id_${produto.id}`);
+    teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
+
+    try {
+        if (editarMensagem) {
+            await ctx.editMessageText(textoBin, { parse_mode: "Markdown", reply_markup: teclado });
+        } else {
+            await ctx.reply(textoBin, { parse_mode: "Markdown", reply_markup: teclado });
+        }
+    } catch (e) {
+        if (editarMensagem) {
+            await ctx.editMessageText(textoBin, { reply_markup: teclado });
+        } else {
+            await ctx.reply(textoBin, { reply_markup: teclado });
+        }
+    }
+}
 
 bot.command("addsaldo", async (ctx) => {
     const userId = String(ctx.from.id);
