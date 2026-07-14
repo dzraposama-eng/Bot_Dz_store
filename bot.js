@@ -100,8 +100,8 @@ const menuPrincipal = new InlineKeyboard()
     .row() 
     .text("💰 Saldo", "menu_saldo") 
     .row() // Cria uma nova linha para os suportes
-    .url("🆘 Suporte Telegram", "https://t.me/@Dzstore71") // Substitua pelo seu @username (sem o @)
-    .url("🟢 Suporte Zap", "https://wa.me/212663116806");
+    .url("🆘Telegram", "https://t.me/Dzstore71") // Substitua pelo seu @username (sem o @)
+    .url("🆘️WhatsApp", "https://wa.me/212663116806");
 
 
 bot.command("start", async (ctx) => {
