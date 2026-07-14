@@ -166,6 +166,14 @@ bot.callbackQuery("verificar_membro", async (ctx) => {
 
 
 bot.command("bin", async (ctx) => {
+    const binDigitada = ctx.match ? ctx.match.trim() : "";
+    if (!binDigitada) return ctx.reply("❌ Por favor, informe a BIN. Exemplo: `/bin 516292`", { parse_mode: "Markdown" });
+    
+    const produtosFiltrados = await obterProdutosDoBanco(binDigitada);
+    if (produtosFiltrados.length === 0) return ctx.reply(`📭 Nenhuma frase encontrada vinculada à BIN *${binDigitada}*.`, { parse_mode: "Markdown" });
+    await exibirCarrosselBinFiltrado(ctx, binDigitada, 0, false);
+});
+
 async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem) {
     const userId = String(ctx.from.id);
     const listaFiltrada = await obterProdutosDoBanco(binTarget);
