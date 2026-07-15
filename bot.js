@@ -82,13 +82,43 @@ async function obterProdutosDoBanco(binFiltro = null) {
     if (error || !data) return [];
     return data;
 }
-
 async function removerProdutoDoBanco(produtoId) {
     await supabase.from("produtos").delete().eq("id", produtoId);
 }
 
+async function clienteEstaAutorizado(userId) {
+    const idStr = String(userId);
+    if (idStr === ADMIN_ID) return true;
+
+    const { data, error } = await supabase
+        .from("clientes_autorizados")
+        .select("user_id")
+        .eq("user_id", idStr)
+        .maybeSingle();
+
+    if (error || !data) return false;
+    return true;
+}
+
+async function autorizarCliente(userId) {
+    const idStr = String(userId);
+    const { error } = await supabase
+        .from("clientes_autorizados")
+        .upsert({ user_id: idStr }, { onConflict: "user_id" });
+    return !error;
+}
+
+async function desautorizarCliente(userId) {
+    const idStr = String(userId);
+    const { error } = await supabase
+        .from("clientes_autorizados")
+        .delete()
+        .eq("user_id", idStr);
+    return !error;
+}
+
 // 👑 ID DO TELEGRAM DO ADMINISTRADOR:
-const ADMIN_ID = "8827427559"; 
+const ADMIN_ID = "8827427559";
 
 bot.command("adicionar", async (ctx) => {
     const userId = String(ctx.from.id);
