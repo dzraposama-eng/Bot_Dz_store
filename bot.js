@@ -543,50 +543,6 @@ bot.callbackQuery(/^comprar_page_(\d+)$/, async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-async function enviarCarrossel(ctx, index) {
-    const userId = String(ctx.from.id);
-    const produtosLista = await obterProdutosDoBanco();
-    const total = produtosLista.length;
-
-    if (total === 0) {
-        return ctx.editMessageText("📭 A vitrine está vazia no momento!", {
-            reply_markup: new InlineKeyboard().text("⬅️ Voltar ao Menu", "menu_principal")
-        });
-    }
-
-    const indexAtual = index >= total ? total - 1 : index;
-    const produto = produtosLista[indexAtual];
-
-    let textoProduto = `💳 *Vitrine de CC* (${indexAtual + 1}/${total})\n\n`;
-    if (userId === ADMIN_ID) {
-        textoProduto += `👑 *MODO ADMINISTRADOR*\n\n${produto.completo}`;
-    } else {
-        textoProduto += `${produto.demonstracao}\n\n💰 *Preço:* ${produto.preco_texto}`;
-    }
-    
-    const teclado = new InlineKeyboard();
-    if (indexAtual > 0) teclado.text("⬅️ Ant", `comprar_page_${indexAtual - 1}`);
-    if (indexAtual < total - 1) teclado.text("Próx ➡️", `comprar_page_${indexAtual + 1}`);
-    if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar `, `pagar_id_${produto.id}`);
-    teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
-
-    await ctx.editMessageText(textoProduto, { parse_mode: "Markdown", reply_markup: teclado });
-}
-
-function fazerRequisicao(url, options, bodyData = null) {
-    return new Promise((resolve, reject) => {
-        const req = https.request(url, options, (res) => {
-            let data = "";
-            res.on("data", (chunk) => data += chunk);
-            res.on("end", () => {
-                try { resolve(JSON.parse(data)); } catch(e) { resolve({}); }
-            });
-        });
-        req.on("error", (err) => reject(err));
-        if (bodyData) req.write(JSON.stringify(bodyData));
-        req.end();
-    });
-}
 
 bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     // CORREÇÃO: Garante que o ID do cliente seja tratado como String, assim como no resto do bot
