@@ -122,7 +122,7 @@ const ADMIN_ID = "8827427559";
 
 bot.command("adicionar", async (ctx) => {
     const userId = String(ctx.from.id);
-    if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
+    if (String(userId).trim() !== String(ADMIN_ID).trim()) return ctx.reply("❌ Você não tem permissão para usar este comando.");
 
     const idCliente = ctx.match ? ctx.match.trim() : "";
     if (!idCliente) return ctx.reply("❌ *Formato inválido!*\n\nUse assim: `/adicionar <ID_DO_CLIENTE>`", { parse_mode: "Markdown" });
