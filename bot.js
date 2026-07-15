@@ -306,8 +306,9 @@ bot.command("addsaldo", async (ctx) => {
 
 bot.command("addproduto", async (ctx) => {
     // 1. Controle de acesso (Dono do Bot)
-    const userId = String(ctx.from.id);
-    if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
+    if (Number(ctx.from.id) !== Number(ADMIN_ID)) {
+        return ctx.reply("❌ Você não tem permissão para usar este comando.");
+    }
 
     // 2. Separação dos dados pela barra |
     const texto = ctx.match ? ctx.match.trim() : "";
