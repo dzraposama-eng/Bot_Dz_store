@@ -343,38 +343,44 @@ bot.command("addproduto", async (ctx) => {
         return i % 2 === 0 ? letra.toLowerCase() : "*";
     }).join("");
 
-    // 4. DESIGN DA VITRINE (Igualzinho ao seu print da Magic Store)
-    // Nota: O preço e o saldo do usuário devem ser injetados dinamicamente no seu comando de exibição (/bin), 
+        // 4. DESIGN DA VITRINE (Igualzinho ao seu print da Magic Store)
+    // Nota: O preço e o saldo do usuário devem ser injetados dinamicamente no seu comando de exibição (/bin),
     // mas o texto base estruturado com os emojis corretos fica salvo assim:
     const demonstracao = `✨ Detalhes do cartão\n` +
-                         `💳 cartão: ${ccMascarada}\n` +
+                         `💳 Cartão: ${ccMascarado}\n` +
                          `📅 mes / ano: ${mesAno}\n` +
-                         `🔐 cvv: ***\n\n` +
-                         `🏳️ bandeira: ${bandeira}\n` +
-                         `💠 nível: ${nivel}\n` +
-                         `⚜️ tipo: ${tipo}\n` +
-                         `🏛️ banco: ${banco}\n` +
+                         `🔒 cvv: ***\n\n` +
+                         `📍 bandeira: ${bandeira}\n` +
+                         `🔹 nivel: ${nivel}\n` +
+                         `🌐 tipo: ${tipo}\n` +
+                         `🏦 banco: ${banco}\n` +
                          `🌍 pais: ${pais}\n\n` +
                          `👤 Nome:\n` +
                          `${nomeMascarado}\n` +
-                         `🪪 cpf:\n` +
-                        
+                         `💳 cpf:\n`;
+
     // 5. TEXTO COMPLETO (O que abre após a compra)
     const completo = `✨ Detalhes do cartão\n` +
                      `💳 cartão: ${cc}\n` +
                      `📅 mes / ano: ${mesAno}\n` +
-                     `🔐 cvv: ${cvv}\n\n` +
-                     `🏳️ bandeira: ${bandeira}\n` +
-                     `💠 nível: ${nivel}\n` +
-                     `⚜️ tipo: ${tipo}\n` +
-                     `🏛️ banco: ${banco}\n` +
+                     `🔒 cvv: ${cvv}\n\n` +
+                     `📍 bandeira: ${bandeira}\n` +
+                     `🔹 nivel: ${nivel}\n` +
+                     `🌐 tipo: ${tipo}\n` +
+                     `🏦 banco: ${banco}\n` +
                      `🌍 pais: ${pais}\n\n` +
                      `👤 Nome:\n` +
                      `${nomeCliente}\n` +
-                     `🪪 cpf:\n` +
+                     `💳 cpf:\n` +
                      `${cpf}`;
 
-    const nomeProduto = `${bandeira.toUpperCase()} ${nivel.toUpperCase()}`;
+    // AQUI VOCÊ DEVE ADICIONAR A LÓGICA PARA SALVAR NO BANCO DE DADOS...
+    // Exemplo: await salvarProdutoNoBanco(preco, demonstracao, completo);
+    // await ctx.reply("Produto adicionado com sucesso!");
+
+}); // <--- ESTA LINHA FECHA O COMANDO 'bot.command("addproduto", ...' QUE ESTAVA ABERTO!
+
+const nomeProduto = `${bandeira.toUpperCase()} ${nivel.toUpperCase()}`;
 
     // 6. Salvando no Banco de Dados (Supabase)
     const { error } = await supabase.from("produtos").insert([{
