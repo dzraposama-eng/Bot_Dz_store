@@ -86,9 +86,6 @@ async function obterProdutosDoBanco(binFiltro = null) {
 async function removerProdutoDoBanco(produtoId) {
     await supabase.from("produtos").delete().eq("id", produtoId);
 }
-async function removerProdutoDoBanco(produtoId) {
-    await supabase.from("produtos").delete().eq("id", produtoId);
-}
 
 // 👑 ID DO TELEGRAM DO ADMINISTRADOR:
 const ADMIN_ID = "8827427559"; 
