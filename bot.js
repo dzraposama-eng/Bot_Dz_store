@@ -118,7 +118,10 @@ async function desautorizarCliente(userId) {
 }
 
 // 👑 ID DO TELEGRAM DO ADMINISTRADOR:
-const ADMIN_ID = 8827427559;
+    // Altere a linha 124 e 142 de:
+const userId = String(ctx.from.id);
+// Para:
+const userId = ctx.from.id;
 
 bot.command("adicionar", async (ctx) => {
     const userId = String(ctx.from.id);
