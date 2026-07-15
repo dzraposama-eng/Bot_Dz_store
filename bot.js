@@ -27,8 +27,6 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 // ==========================================
 // FUNÇÕES DO BANCO DE DADOS (SUPABASE)
 // ==========================================
-const ADMIN_ID = "8827427559"; //  Coloque no início do arquivo!
-
 async function obterSaldo(userId) {
     const idStr = String(userId);
     
