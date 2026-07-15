@@ -3,7 +3,10 @@ const http = require("http");
 const https = require("https");
 const { createClient } = require("@supabase/supabase-js");
 
-// Servidor para manter a Render online
+// 👑 DEFINA O ADMIN AQUI NO TOPO, ANTES DE TUDO!
+const ADMIN_ID = "8827427559"; 
+
+// Servidor para manter a Render online...
 const server = http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "text/plain" });
     res.end("Bot Online!");
