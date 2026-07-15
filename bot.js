@@ -298,7 +298,7 @@ bot.command("addproduto", async (ctx) => {
                          `${cpfMascarado}\n\n` +
                          `💵 Preço: {preco_dinamico} ( saldo )\n` +
                          `💰 Seu saldo: {saldo_dinamico}\n` +
-                         `✅ INFORMAÇÕES VIRGENS DIRETO DO ADMIN (SNIFFER)`;
+                         `✅ INFORMAÇÕES VIRGENS DIRETO DO ADMIN (RILEY)`;
 
     // 5. TEXTO COMPLETO (O que abre após a compra)
     const completo = `✨ Detalhes do cartão\n` +
