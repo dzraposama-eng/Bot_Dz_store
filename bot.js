@@ -129,7 +129,7 @@ bot.command("adicionar", async (ctx) => {
 
     const sucesso = await autorizarCliente(idCliente);
     if (sucesso) {
-        await ctx.reply(`✅ *Sucesso!* O cliente com ID \`${idCliente}\` agora consegue visualizar os CPFs completos.`, { parse_mode: "Markdown" });
+        await ctx.reply(`✅ *Sucesso!* O cliente com ID \` ${idCliente}\` agora consegue visualizar os CPFs completos.`, { parse_mode: "Markdown" });
         try {
             await ctx.api.sendMessage(idCliente, "🎉 *Acesso Liberado!* Agora você consegue ver os CPFs completos nas consultas de CC.");
         } catch (e) {}
