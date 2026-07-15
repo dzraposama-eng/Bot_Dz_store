@@ -282,8 +282,9 @@ async function exibirCarrosselBinFiltrado(ctx, binTarget, index, editarMensagem)
 }
 
 bot.command("addsaldo", async (ctx) => {
-    const userId = String(ctx.from.id);
-    if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
+    if (Number(ctx.from.id) !== Number(ADMIN_ID)) {
+        return ctx.reply("❌ Você não tem permissão para usar este comando.");
+    }
 
     const argumentos = ctx.match ? ctx.match.trim().split(" ") : [];
     if (argumentos.length < 2) return ctx.reply("❌ *Formato inválido!*\n\nUse assim: `/addsaldo <ID_DO_CLIENTE> <VALOR>`", { parse_mode: "Markdown" });
