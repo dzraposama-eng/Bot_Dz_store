@@ -24,6 +24,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 // ==========================================
 // FUNÇÕES DO BANCO DE DADOS (SUPABASE)
 // ==========================================
+const ADMIN_ID = "8827427559"; //  Coloque no início do arquivo!
 
 async function obterSaldo(userId) {
     const idStr = String(userId);
@@ -116,9 +117,6 @@ async function desautorizarCliente(userId) {
         .eq("user_id", idStr);
     return !error;
 }
-
-// 👑 ID DO TELEGRAM DO ADMINISTRADOR:
-const ADMIN_ID = "8827427559";
 
 bot.command("adicionar", async (ctx) => {
     const userId = String(ctx.from.id);
