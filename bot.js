@@ -602,10 +602,9 @@ bot.callbackQuery(/^comprar_page_(\d+)$/, async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-
 bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
-    // CORREÇÃO: Garante que o ID do cliente seja tratado como String, assim como no resto do bot
-    const userId = String(ctx.from.id); 
+    // 💡 TRAVA DO ID: Fixa o ID de forma explícita e segura em uma constante
+    const compradorIdFixo = String(ctx.from.id); 
     const produtoId = parseInt(ctx.match[1]);
     
     const produtosLista = await obterProdutosDoBanco();
@@ -617,12 +616,12 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
     }
 
     const produto = produtosLista[produtoIndex];
-    const saldoAtual = await obterSaldo(userId);
+    const saldoAtual = await obterSaldo(compradorIdFixo);
 
     if (saldoAtual >= produto.preco) {
         const novoSaldo = saldoAtual - produto.preco;
-        await atualizarSaldo(userId, novoSaldo); 
-        await salvarCompra(userId, produto); 
+        await atualizarSaldo(compradorIdFixo, novoSaldo); 
+        await salvarCompra(compradorIdFixo, produto); 
         await removerProdutoDoBanco(produto.id); 
 
         await ctx.editMessageText(`🎉 *COMPRA APROVADA VIA CARTEIRA!*\n\n${produto.completo}\n\n📉 *Saldo restante:* R$ ${novoSaldo.toFixed(2)}`, { parse_mode: "Markdown" });
@@ -640,7 +639,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
             headers: {
                 "Authorization": `Bearer ${process.env.MP_TOKEN}`,
                 "Content-Type": "application/json",
-                "X-Idempotency-Key": `${Date.now()}-${userId}` // Usando a variável corrigida
+                "X-Idempotency-Key": `${Date.now()}-${compradorIdFixo}`
             }
         };
         const body = {
@@ -670,7 +669,8 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
                 if (statusData.status === "approved") {
                     clearInterval(checarPagamento);
                     
-                    await salvarCompra(userId, produto); 
+                    // 💡 GARANTIA SUPABASE: Registra usando a constante fixa de ID
+                    await salvarCompra(compradorIdFixo, produto); 
                     await removerProdutoDoBanco(produto.id); 
 
                     await ctx.reply(`🎉 *PAGAMENTO CONFIRMADO!*\n\n${produto.completo}`, { parse_mode: "Markdown" });
@@ -683,6 +683,7 @@ bot.callbackQuery(/^pagar_id_(\d+)$/, async (ctx) => {
         await ctx.reply("❌ Erro ao processar o seu Pix.");
     }
 });
+
 
 bot.callbackQuery("menu_saldo", async (ctx) => {
     await ctx.answerCallbackQuery();
