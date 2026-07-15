@@ -395,6 +395,41 @@ bot.command("pix", async (ctx) => {
         reply_markup: { force_reply: true }
     });
 });
+bot.command("adicionar", async (ctx) => {
+    const userId = String(ctx.from.id);
+    if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
+
+    const idCliente = ctx.match ? ctx.match.trim() : "";
+    if (!idCliente) return ctx.reply("❌ *Formato inválido!*\n\nUse assim: `/adicionar <ID_DO_CLIENTE>`", { parse_mode: "Markdown" });
+
+    const sucesso = await autorizarCliente(idCliente);
+    if (sucesso) {
+        await ctx.reply(`✅ *Sucesso!* O cliente com ID \`${idCliente}\` agora consegue visualizar os CPFs completos.`, { parse_mode: "Markdown" });
+        try {
+            await ctx.api.sendMessage(idCliente, "🎉 *Acesso Liberado!* Agora você consegue ver os CPFs completos nas consultas de CC.");
+        } catch (e) {}
+    } else {
+        await ctx.reply("❌ Erro ao salvar a autorização no banco de dados.");
+    }
+});
+
+bot.command("remover", async (ctx) => {
+    const userId = String(ctx.from.id);
+    if (userId !== ADMIN_ID) return ctx.reply("❌ Você não tem permissão para usar este comando.");
+
+    const idCliente = ctx.match ? ctx.match.trim() : "";
+    if (!idCliente) return ctx.reply("❌ *Formato inválido!*\n\nUse assim: `/remover <ID_DO_CLIENTE>`", { parse_mode: "Markdown" });
+
+    const sucesso = await desautorizarCliente(idCliente);
+    if (sucesso) {
+        await ctx.reply(`❌ *Acesso revogado!* O cliente com ID \`${idCliente}\` não tem mais acesso aos CPFs completos.`, { parse_mode: "Markdown" });
+        try {
+            await ctx.api.sendMessage(idCliente, "⚠️ *Aviso:* Sua permissão para visualizar CPFs completos foi revogada.");
+        } catch (e) {}
+    } else {
+        await ctx.reply("❌ Erro ao remover a autorização no banco de dados.");
+    }
+});
 
 // ==========================================
 // PROCESSAMENTO DE CALLBACKS & CARROSSEIS
