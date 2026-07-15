@@ -407,45 +407,6 @@ bot.callbackQuery(/^bin_filtro_([^_]+)_(\d+)$/, async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-async function enviarCarrossel(ctx, index) {
-    const userId = String(ctx.from.id);
-    const produtosLista = await obterProdutosDoBanco();
-    const total = produtosLista.length;
-
-    if (total === 0) {
-        return ctx.editMessageText("📭 A vitrine está vazia no momento!", {
-            reply_markup: new InlineKeyboard().text("⬅️ Voltar ao Menu", "menu_principal")
-        });
-    }
-
-    const indexAtual = index >= total ? total - 1 : index;
-    const produto = produtosLista[indexAtual];
-
-    let textoProduto = `💳 *Vitrine de CC* (${indexAtual + 1}/${total})\n\n`;
-    
-    // CORREÇÃO SEGURA: Se o campo demonstracao estiver vazio, ele usa o nome do produto para não travar o bot do cliente
-    const infoDemonstracao = produto.demonstracao || produto.nome || "Produto sem descrição";
-    const precoMostrar = produto.preco_texto || `R$ ${parseFloat(produto.preco).toFixed(2)}`;
-
-    if (userId === ADMIN_ID) {
-        textoProduto += `👑 *MODO ADMINISTRADOR*\n\n${produto.completo || infoDemonstracao}`;
-    } else {
-        textoProduto += `${infoDemonstracao}\n\n💰 *Preço:* ${precoMostrar}`;
-    }
-    
-    const teclado = new InlineKeyboard();
-    if (indexAtual > 0) teclado.text("⬅️ Ant", `comprar_page_${indexAtual - 1}`);
-    if (indexAtual < total - 1) teclado.text("Próx ➡️", `comprar_page_${indexAtual + 1}`);
-    if (userId !== ADMIN_ID) teclado.row().text(`💳 Comprar `, `pagar_id_${produto.id}`);
-    teclado.row().text("⬅️ Voltar ao Menu", "menu_principal");
-
-    try {
-        await ctx.editMessageText(textoProduto, { parse_mode: "Markdown", reply_markup: teclado });
-    } catch (error) {
-        // Se ainda der erro de formato, envia como texto normal para garantir que o cliente veja
-        await ctx.editMessageText(textoProduto, { reply_markup: teclado });
-    }
-}
 
 
 bot.callbackQuery("menu_principal", async (ctx) => {
