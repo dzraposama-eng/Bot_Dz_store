@@ -358,9 +358,7 @@ bot.command("addproduto", async (ctx) => {
                          `👤 Nome:\n` +
                          `${nomeMascarado}\n` +
                          `🪪 cpf:\n` +
-                         `${cpfMascarado}\n\n` +
-                         
-                     
+                        
     // 5. TEXTO COMPLETO (O que abre após a compra)
     const completo = `✨ Detalhes do cartão\n` +
                      `💳 cartão: ${cc}\n` +
